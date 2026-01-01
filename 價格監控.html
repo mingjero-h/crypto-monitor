@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Binance 即時價格監控</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+th {
+    background-color: #f4f4f4;
+}
+input {
+    width: 90%;
+}
+.positive {
+    color: green;
+}
+.negative {
+    color: red;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Binance WebSocket 即時價格監控</h2>
+<button onclick="addRow()">新增一筆</button>
+
+<table>
+<thead>
+<tr>
+    <th>姓名</th>
+    <th>槓桿</th>
+    <th>幣種 / 買入價</th>
+    <th>即時價格</th>
+    <th>獲利比率</th>
+</tr>
+</thead>
+<tbody id="cryptoTable"></tbody>
+</table>
+
+<script>
+let sockets = {};
+
+function saveData() {
+    const rows = document.querySelectorAll("#cryptoTable tr");
+    const data = [];
+
+    rows.forEach(row => {
+        data.push({
+            name: row.cells[0].querySelector("input").value,
+            leverage: row.cells[1].querySelector("input").value,
+            symbol: row.cells[2].querySelectorAll("input")[0].value,
+            buyPrice: row.cells[2].querySelectorAll("input")[1].value
+        });
+    });
+
+    localStorage.setItem("cryptoMonitorData", JSON.stringify(data));
+}
+
+function loadData() {
+    const data = JSON.parse(localStorage.getItem("cryptoMonitorData") || "[]");
+    data.forEach(item => addRow(item));
+}
+
+function addRow(saved = {}) {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td><input value="${saved.name || ""}" oninput="saveData()"></td>
+        <td><input type="number" value="${saved.leverage || 1}" min="1" oninput="saveData()"></td>
+        <td>
+            <input placeholder="BTCUSDT" value="${saved.symbol || ""}" 
+                   onblur="connectWS(this)">
+            <br>
+            <small>
+                買入價：
+                <input type="number" step="0.0001" value="${saved.buyPrice || ""}" 
+                       oninput="saveData()">
+            </small>
+        </td>
+        <td class="price">--</td>
+        <td class="profit">--</td>
+    `;
+
+    document.getElementById("cryptoTable").appendChild(row);
+
+    if (saved.symbol) {
+        connectWS(row.cells[2].querySelector("input"));
+    }
+}
+
+function connectWS(input) {
+    const symbol = input.value.trim().toLowerCase();
+    if (!symbol) return;
+
+    if (sockets[symbol]) return;
+
+    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
+    sockets[symbol] = ws;
+
+    ws.onmessage = e => {
+        const data = JSON.parse(e.data);
+        updateRows(symbol, parseFloat(data.p));
+    };
+
+    saveData();
+}
+
+function updateRows(symbol, price) {
+    const rows = document.querySelectorAll("#cryptoTable tr");
+
+    rows.forEach(row => {
+        const symbolInput = row.cells[2].querySelectorAll("input")[0];
+        const buyInput = row.cells[2].querySelectorAll("input")[1];
+        const leverageInput = row.cells[1].querySelector("input");
+        const priceCell = row.querySelector(".price");
+        const profitCell = row.querySelector(".profit");
+
+        if (symbolInput.value.trim().toLowerCase() !== symbol) return;
+
+        const buy = parseFloat(buyInput.value);
+        const leverage = parseFloat(leverageInput.value);
+        if (isNaN(buy) || isNaN(leverage)) return;
+
+        priceCell.textContent = price.toFixed(4);
+
+        const raw = ((price - buy) / buy) * 100;
+        const result = raw * leverage;
+
+        profitCell.textContent = result.toFixed(2) + "%";
+        profitCell.className = "profit " + (result >= 0 ? "positive" : "negative");
+    });
+}
+
+window.onload = loadData;
+</script>
+
+</body>
+</html>

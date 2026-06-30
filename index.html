@@ -1,186 +1,89 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+<!doctype html>
+<html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<title>Binance 即時價格監控</title>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-}
-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-}
-header input {
-    margin-left: 10px;
-    width: 200px;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-th, td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: center;
-}
-th {
-    background-color: #f4f4f4;
-}
-select, input {
-    width: 90%;
-}
-.positive {
-    color: green;
-}
-.negative {
-    color: red;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bybit 資金費率監控 v1</title>
+  <style>
+    :root{--bg:#0b0f17;--card:#121826;--muted:#8b95a7;--text:#eef2ff;--line:#263244;--green:#20c997;--red:#ff5c7a;--yellow:#ffd43b;--blue:#66d9ef}
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+    header{padding:20px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#111827,#0b0f17)}
+    h1{margin:0;font-size:24px}.sub{margin-top:6px;color:var(--muted);font-size:14px}.wrap{max-width:1280px;margin:0 auto;padding:18px}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.label{font-size:13px;color:var(--muted)}.num{font-size:24px;font-weight:800;margin-top:5px}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:14px 0}.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:12px;color:var(--muted)}
+    input,select,button{background:#0f1624;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}button{cursor:pointer;font-weight:700}button:hover{border-color:#53657f}
+    .tabs{display:flex;gap:8px;margin:8px 0 14px}.tab{padding:9px 12px;border-radius:999px;border:1px solid var(--line);cursor:pointer;color:var(--muted)}.tab.on{color:#111;background:var(--yellow);border-color:var(--yellow);font-weight:800}
+    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}th{font-size:12px;color:var(--muted);background:#0f1624;position:sticky;top:0}td{font-size:14px}.pos{color:var(--green);font-weight:800}.neg{color:var(--red);font-weight:800}.warn{color:var(--yellow);font-weight:800}.small{font-size:12px;color:var(--muted)}
+    .tablebox{overflow:auto;border-radius:14px}.footer{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.7}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 7px;color:var(--muted);font-size:12px}
+  </style>
 </head>
-
 <body>
+<header><div class="wrap"><h1>Bybit 資金費率監控 v1</h1><div class="sub">即時讀取 Bybit USDT 永續合約，排序前十名／前二十名。負費率＝做多收資金費；正費率＝做空收資金費。</div></div></header>
+<main class="wrap">
+  <section class="grid">
+    <div class="card"><div class="label">最後更新</div><div class="num" id="updated">--</div></div>
+    <div class="card"><div class="label">合約數量</div><div class="num" id="count">--</div></div>
+    <div class="card"><div class="label">做多收租最高</div><div class="num neg" id="bestLong">--</div></div>
+    <div class="card"><div class="label">做空收租最高</div><div class="num pos" id="bestShort">--</div></div>
+  </section>
 
-<header>
-    <strong>使用者 ID：</strong>
-    <input id="userId" placeholder="英數組合 ID">
-    <button onclick="initUser()">登入</button>
-</header>
+  <div class="tabs">
+    <div class="tab on" data-mode="long">負資金費｜做多收</div>
+    <div class="tab" data-mode="short">正資金費｜做空收</div>
+    <div class="tab" data-mode="abs">絕對值最高</div>
+  </div>
 
-<h2>Binance WebSocket 即時價格監控（槓桿固定 100x）</h2>
-<button onclick="addRow()">新增一筆</button>
+  <section class="toolbar">
+    <div class="field"><label>顯示筆數</label><select id="limit"><option>10</option><option>20</option><option>50</option><option>100</option></select></div>
+    <div class="field"><label>搜尋幣種</label><input id="search" placeholder="例如 LAB、BTC" /></div>
+    <div class="field"><label>最低 24h 成交額 USDT</label><input id="minTurnover" type="number" value="0" step="100000" /></div>
+    <div class="field"><label>本金 USDT</label><input id="capital" type="number" value="1000" /></div>
+    <div class="field"><label>槓桿</label><input id="lev" type="number" value="10" /></div>
+    <button id="refresh">重新整理</button>
+  </section>
 
-<table>
-<thead>
-<tr>
-    <th>姓名</th>
-    <th>幣種</th>
-    <th>買入價</th>
-    <th>即時價格</th>
-    <th>獲利比率（100x）</th>
-</tr>
-</thead>
-<tbody id="cryptoTable"></tbody>
-</table>
-
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>#</th><th>合約</th><th>方向</th><th>資金費率</th><th>結算間隔</th><th>下次結算</th><th>本金估計收入</th><th>24h 成交額</th><th>OI Value</th><th>標記價</th><th>24h 漲跌</th><th>風險</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="12">載入中...</td></tr></tbody>
+    </table>
+  </div>
+  <div class="footer">
+    資料來源：Bybit V5 <span class="pill">/v5/market/tickers?category=linear</span>。Bybit tickers 回傳 fundingRate、nextFundingTime、openInterestValue、turnover24h、fundingIntervalHour 等欄位；資金費率會每分鐘更新，實際收付以交易所結算為準。<br>
+    估計收入 = 本金 × 槓桿 × |資金費率|，未扣手續費、滑價、價差與爆倉風險。小市值與低成交量幣種即使資金費很高，也可能因快速反向波動先爆倉。
+  </div>
+</main>
 <script>
-const FIXED_LEVERAGE = 100;
-let sockets = {};
-let storageKey = null;
-
-/* ========= 使用者初始化 ========= */
-
-function initUser() {
-    const id = document.getElementById("userId").value.trim();
-    if (!/^[a-zA-Z0-9]+$/.test(id)) {
-        alert("使用者 ID 只能是英文與數字");
-        return;
-    }
-    storageKey = "cryptoMonitorData_" + id;
-    document.getElementById("cryptoTable").innerHTML = "";
-    loadData();
+const API='https://api.bybit.com/v5/market/tickers?category=linear';
+let rows=[], mode='long';
+const $=id=>document.getElementById(id);
+function pct(x,d=4){return (Number(x)*100).toFixed(d)+'%'}
+function money(x){x=Number(x); if(!isFinite(x))return '--'; if(Math.abs(x)>=1e9)return '$'+(x/1e9).toFixed(2)+'B'; if(Math.abs(x)>=1e6)return '$'+(x/1e6).toFixed(2)+'M'; if(Math.abs(x)>=1e3)return '$'+(x/1e3).toFixed(2)+'K'; return '$'+x.toFixed(2)}
+function timeLeft(ms){const d=new Date(Number(ms)); if(!ms||isNaN(d))return '--'; return d.toLocaleString('zh-TW',{hour12:false,month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
+function risk(r){const t=Number(r.turnover24h||0), oi=Number(r.openInterestValue||0), f=Math.abs(Number(r.fundingRate||0)); let score=0; if(t<5e6)score+=2; else if(t<2e7)score+=1; if(oi<2e6)score+=1; if(f>0.01)score+=2; else if(f>0.003)score+=1; if(score>=4)return '<span class="neg">高</span>'; if(score>=2)return '<span class="warn">中</span>'; return '<span class="pos">低</span>'}
+function render(){
+  const q=$('search').value.trim().toUpperCase(); const minT=Number($('minTurnover').value||0); const limit=Number($('limit').value||10); const cap=Number($('capital').value||0), lev=Number($('lev').value||1);
+  let data=rows.filter(r=>r.symbol.endsWith('USDT') && (!q||r.symbol.includes(q)) && Number(r.turnover24h||0)>=minT);
+  if(mode==='long') data=data.filter(r=>Number(r.fundingRate)<0).sort((a,b)=>Number(a.fundingRate)-Number(b.fundingRate));
+  if(mode==='short') data=data.filter(r=>Number(r.fundingRate)>0).sort((a,b)=>Number(b.fundingRate)-Number(a.fundingRate));
+  if(mode==='abs') data=data.sort((a,b)=>Math.abs(Number(b.fundingRate))-Math.abs(Number(a.fundingRate)));
+  data=data.slice(0,limit);
+  $('tbody').innerHTML=data.map((r,i)=>{const f=Number(r.fundingRate||0), income=cap*lev*Math.abs(f); const dir=f<0?'做多收':'做空收';
+    return `<tr><td>${i+1}</td><td><b>${r.symbol}</b></td><td>${dir}</td><td class="${f<0?'neg':'pos'}">${pct(f)}</td><td>${r.fundingIntervalHour||'--'}h</td><td>${timeLeft(r.nextFundingTime)}</td><td>${money(income)}</td><td>${money(r.turnover24h)}</td><td>${money(r.openInterestValue)}</td><td>${r.markPrice||'--'}</td><td class="${Number(r.price24hPcnt)<0?'neg':'pos'}">${pct(r.price24hPcnt,2)}</td><td>${risk(r)}</td></tr>`
+  }).join('') || '<tr><td colspan="12">沒有符合條件的資料</td></tr>';
 }
-
-/* ========= 資料儲存 ========= */
-
-function saveData() {
-    if (!storageKey) return;
-
-    const rows = document.querySelectorAll("#cryptoTable tr");
-    const data = [];
-
-    rows.forEach(row => {
-        data.push({
-            name: row.cells[0].querySelector("input").value,
-            symbol: row.cells[1].querySelector("select").value,
-            buyPrice: row.cells[2].querySelector("input").value
-        });
-    });
-
-    localStorage.setItem(storageKey, JSON.stringify(data));
+async function load(){
+  $('tbody').innerHTML='<tr><td colspan="12">載入中...</td></tr>';
+  try{const res=await fetch(API,{cache:'no-store'}); const json=await res.json(); if(json.retCode!==0)throw new Error(json.retMsg||'API error'); rows=json.result.list||[];
+    $('updated').textContent=new Date().toLocaleTimeString('zh-TW',{hour12:false}); $('count').textContent=rows.length;
+    const neg=[...rows].filter(r=>Number(r.fundingRate)<0).sort((a,b)=>Number(a.fundingRate)-Number(b.fundingRate))[0];
+    const pos=[...rows].filter(r=>Number(r.fundingRate)>0).sort((a,b)=>Number(b.fundingRate)-Number(a.fundingRate))[0];
+    $('bestLong').textContent=neg?`${neg.symbol} ${pct(neg.fundingRate,3)}`:'--'; $('bestShort').textContent=pos?`${pos.symbol} ${pct(pos.fundingRate,3)}`:'--'; render();
+  }catch(e){$('tbody').innerHTML=`<tr><td colspan="12">讀取失敗：${e.message}。若 GitHub Pages 被 CORS 擋住，可改用 Cloudflare Worker 代理。</td></tr>`}
 }
-
-function loadData() {
-    const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    data.forEach(item => addRow(item));
-}
-
-/* ========= UI ========= */
-
-function addRow(saved = {}) {
-    if (!storageKey) {
-        alert("請先輸入使用者 ID");
-        return;
-    }
-
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-        <td><input value="${saved.name || ""}" oninput="saveData()"></td>
-        <td>
-            <select onchange="changeSymbol(this)">
-                <option value="BTCUSDT" ${saved.symbol === "BTCUSDT" ? "selected" : ""}>BTCUSDT</option>
-                <option value="ETHUSDT" ${saved.symbol === "ETHUSDT" ? "selected" : ""}>ETHUSDT</option>
-            </select>
-        </td>
-        <td>
-            <input type="number" step="0.0001" value="${saved.buyPrice || ""}" oninput="saveData()">
-        </td>
-        <td class="price">--</td>
-        <td class="profit">--</td>
-    `;
-
-    document.getElementById("cryptoTable").appendChild(row);
-
-    connectWS(row.cells[1].querySelector("select"));
-}
-
-/* ========= WebSocket ========= */
-
-function changeSymbol(select) {
-    connectWS(select);
-    saveData();
-}
-
-function connectWS(select) {
-    const symbol = select.value.toLowerCase();
-    if (sockets[symbol]) return;
-
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
-    sockets[symbol] = ws;
-
-    ws.onmessage = e => {
-        const data = JSON.parse(e.data);
-        updateRows(symbol, parseFloat(data.p));
-    };
-}
-
-function updateRows(symbol, price) {
-    const rows = document.querySelectorAll("#cryptoTable tr");
-
-    rows.forEach(row => {
-        const select = row.cells[1].querySelector("select");
-        if (select.value.toLowerCase() !== symbol) return;
-
-        const buyInput = row.cells[2].querySelector("input");
-        const priceCell = row.querySelector(".price");
-        const profitCell = row.querySelector(".profit");
-
-        const buy = parseFloat(buyInput.value);
-        if (isNaN(buy)) return;
-
-        priceCell.textContent = price.toFixed(4);
-
-        const raw = ((price - buy) / buy) * 100;
-        const result = raw * FIXED_LEVERAGE;
-
-        profitCell.textContent = result.toFixed(2) + "%";
-        profitCell.className = "profit " + (result >= 0 ? "positive" : "negative");
-    });
-}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); mode=t.dataset.mode; render()});
+['limit','search','minTurnover','capital','lev'].forEach(id=>$(id).addEventListener('input',render)); $('refresh').onclick=load; load(); setInterval(load,60000);
 </script>
-
 </body>
 </html>

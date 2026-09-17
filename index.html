@@ -1,89 +1,522 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bybit 資金費率監控 v1</title>
-  <style>
-    :root{--bg:#0b0f17;--card:#121826;--muted:#8b95a7;--text:#eef2ff;--line:#263244;--green:#20c997;--red:#ff5c7a;--yellow:#ffd43b;--blue:#66d9ef}
-    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
-    header{padding:20px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#111827,#0b0f17)}
-    h1{margin:0;font-size:24px}.sub{margin-top:6px;color:var(--muted);font-size:14px}.wrap{max-width:1280px;margin:0 auto;padding:18px}
-    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.grid{grid-template-columns:1fr}}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.label{font-size:13px;color:var(--muted)}.num{font-size:24px;font-weight:800;margin-top:5px}
-    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:14px 0}.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:12px;color:var(--muted)}
-    input,select,button{background:#0f1624;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}button{cursor:pointer;font-weight:700}button:hover{border-color:#53657f}
-    .tabs{display:flex;gap:8px;margin:8px 0 14px}.tab{padding:9px 12px;border-radius:999px;border:1px solid var(--line);cursor:pointer;color:var(--muted)}.tab.on{color:#111;background:var(--yellow);border-color:var(--yellow);font-weight:800}
-    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}th{font-size:12px;color:var(--muted);background:#0f1624;position:sticky;top:0}td{font-size:14px}.pos{color:var(--green);font-weight:800}.neg{color:var(--red);font-weight:800}.warn{color:var(--yellow);font-weight:800}.small{font-size:12px;color:var(--muted)}
-    .tablebox{overflow:auto;border-radius:14px}.footer{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.7}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 7px;color:var(--muted);font-size:12px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funding CP 判斷器 + 即時監控</title>
+<style>
+:root{
+  --bg:#0b1020;--panel:#131a2b;--panel2:#182238;--text:#e8edf7;--muted:#9aa8bd;
+  --border:#2a3650;--good:#3ddc97;--warn:#ffd166;--bad:#ff6b6b;--accent:#74a7ff;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans TC",sans-serif;background:var(--bg);color:var(--text);padding:18px}
+h1,h2{margin:0 0 12px}
+h1{font-size:24px}
+h2{font-size:19px}
+small,.muted{color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+select,input,button{
+  width:100%;background:#0f1627;color:var(--text);border:1px solid var(--border);
+  border-radius:8px;padding:9px 10px
+}
+button{cursor:pointer;background:#1c2a46}
+button:hover{border-color:var(--accent)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.actions button{width:auto}
+.banner{
+  padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);
+  font-size:16px;font-weight:700;margin-top:12px
+}
+.good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)} .accent{color:var(--accent)}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+th,td{border-bottom:1px solid var(--border);padding:8px 7px;text-align:center;white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel2);z-index:1}
+tr.clickable:hover{background:#17233a;cursor:pointer}
+.tablewrap{overflow:auto;max-height:520px;border:1px solid var(--border);border-radius:10px}
+.kpi{background:var(--panel2);border:1px solid var(--border);padding:10px;border-radius:10px}
+.kpi b{display:block;font-size:18px;margin-top:4px}
+.tag{display:inline-block;padding:3px 7px;border-radius:999px;background:#222d43;border:1px solid var(--border)}
+.note{font-size:12px;line-height:1.55;color:var(--muted)}
+.row-input{min-width:90px}
+#candidateSelect{min-width:320px}
+@media(max-width:700px){body{padding:10px}th,td{font-size:12px;padding:6px}}
+</style>
 </head>
 <body>
-<header><div class="wrap"><h1>Bybit 資金費率監控 v1</h1><div class="sub">即時讀取 Bybit USDT 永續合約，排序前十名／前二十名。負費率＝做多收資金費；正費率＝做空收資金費。</div></div></header>
-<main class="wrap">
-  <section class="grid">
-    <div class="card"><div class="label">最後更新</div><div class="num" id="updated">--</div></div>
-    <div class="card"><div class="label">合約數量</div><div class="num" id="count">--</div></div>
-    <div class="card"><div class="label">做多收租最高</div><div class="num neg" id="bestLong">--</div></div>
-    <div class="card"><div class="label">做空收租最高</div><div class="num pos" id="bestShort">--</div></div>
-  </section>
+<h1>Funding CP 判斷器 + 即時監控</h1>
+<p class="muted">資料源 → Funding 判斷器 → CP 排序 → 結算倒數／提示。CP = |Funding| ÷ 安全門檻；CP &gt; 1 代表 Funding 超過目前設定的安全門檻。</p>
 
-  <div class="tabs">
-    <div class="tab on" data-mode="long">負資金費｜做多收</div>
-    <div class="tab" data-mode="short">正資金費｜做空收</div>
-    <div class="tab" data-mode="abs">絕對值最高</div>
+<div class="panel">
+  <h2>1. 資料源與判斷器</h2>
+  <div class="grid">
+    <div>
+      <label>資料源</label>
+      <select id="source">
+        <option value="bybit">Bybit USDT 永續</option>
+        <option value="binance">Binance USDⓈ-M 永續</option>
+      </select>
+    </div>
+    <div>
+      <label>單邊名義價值（USDT）</label>
+      <input id="notional" type="number" min="10" step="10" value="5000">
+    </div>
+    <div>
+      <label>新增反手部位來回成本（%）</label>
+      <input id="feePct" type="number" min="0" step="0.001" value="0.10">
+    </div>
+    <div>
+      <label>安全係數</label>
+      <input id="safety" type="number" min="0.1" step="0.1" value="1.5">
+    </div>
+    <div>
+      <label>結算前後曝險時間（秒）</label>
+      <input id="exposureSec" type="number" min="1" step="1" value="6">
+    </div>
+    <div>
+      <label>最低 24h 成交額（USDT）</label>
+      <input id="minTurnover" type="number" min="0" step="1000000" value="5000000">
+    </div>
+    <div>
+      <label>精算候選數</label>
+      <input id="refineN" type="number" min="5" max="30" step="1" value="12">
+    </div>
+    <div>
+      <label>自動刷新（秒）</label>
+      <input id="refreshSec" type="number" min="10" max="300" step="5" value="30">
+    </div>
   </div>
+  <div class="actions">
+    <button id="refreshBtn">立即刷新</button>
+    <button id="notifyBtn">啟用瀏覽器提示</button>
+  </div>
+  <p id="status" class="note">尚未載入。</p>
+</div>
 
-  <section class="toolbar">
-    <div class="field"><label>顯示筆數</label><select id="limit"><option>10</option><option>20</option><option>50</option><option>100</option></select></div>
-    <div class="field"><label>搜尋幣種</label><input id="search" placeholder="例如 LAB、BTC" /></div>
-    <div class="field"><label>最低 24h 成交額 USDT</label><input id="minTurnover" type="number" value="0" step="100000" /></div>
-    <div class="field"><label>本金 USDT</label><input id="capital" type="number" value="1000" /></div>
-    <div class="field"><label>槓桿</label><input id="lev" type="number" value="10" /></div>
-    <button id="refresh">重新整理</button>
-  </section>
+<div class="panel">
+  <h2>2. 高 CP 候選下拉選單</h2>
+  <div class="grid">
+    <div style="grid-column:span 2">
+      <label>依 CP 由高到低</label>
+      <select id="candidateSelect"><option>載入中...</option></select>
+    </div>
+    <div class="kpi"><span class="muted">Funding</span><b id="kFunding">--</b></div>
+    <div class="kpi"><span class="muted">CP</span><b id="kCP">--</b></div>
+    <div class="kpi"><span class="muted">預估額外淨收益</span><b id="kNet">--</b></div>
+    <div class="kpi"><span class="muted">收費方向</span><b id="kSide">--</b></div>
+  </div>
+  <div id="timeBanner" class="banner">等待資料...</div>
+  <div class="actions">
+    <button id="addMonitorBtn">加入下方即時監控</button>
+  </div>
+  <p class="note">
+    風險估計：抓候選幣最近 1 分鐘 K 線，取短期絕對報酬的高分位，再按曝險秒數縮放；並以 Bid/Ask spread 作最低風險底線。
+    這是篩選器，不是保證獲利。Bybit 對結算前後極短時間的開／平倉是否計入該期 Funding 不保證，因此 T±5 秒會特別標示為高執行不確定區。
+  </p>
+</div>
 
-  <div class="tablebox">
+<div class="panel">
+  <h2>3. CP 排名</h2>
+  <div class="tablewrap">
     <table>
-      <thead><tr><th>#</th><th>合約</th><th>方向</th><th>資金費率</th><th>結算間隔</th><th>下次結算</th><th>本金估計收入</th><th>24h 成交額</th><th>OI Value</th><th>標記價</th><th>24h 漲跌</th><th>風險</th></tr></thead>
-      <tbody id="tbody"><tr><td colspan="12">載入中...</td></tr></tbody>
+      <thead>
+        <tr>
+          <th>#</th><th>交易對</th><th>Funding</th><th>收費側</th><th>Mark</th>
+          <th>短時風險</th><th>安全門檻</th><th>CP</th><th>預估淨收益</th>
+          <th>下次結算</th><th>倒數</th><th>24h 成交額</th><th>判斷</th>
+        </tr>
+      </thead>
+      <tbody id="rankBody"></tbody>
     </table>
   </div>
-  <div class="footer">
-    資料來源：Bybit V5 <span class="pill">/v5/market/tickers?category=linear</span>。Bybit tickers 回傳 fundingRate、nextFundingTime、openInterestValue、turnover24h、fundingIntervalHour 等欄位；資金費率會每分鐘更新，實際收付以交易所結算為準。<br>
-    估計收入 = 本金 × 槓桿 × |資金費率|，未扣手續費、滑價、價差與爆倉風險。小市值與低成交量幣種即使資金費很高，也可能因快速反向波動先爆倉。
+</div>
+
+<div class="panel">
+  <h2>4. 即時持倉監控</h2>
+  <div class="actions"><button id="addBlankBtn">新增空白列</button></div>
+  <div class="tablewrap" style="max-height:none">
+    <table>
+      <thead>
+        <tr>
+          <th>名稱</th><th>來源</th><th>方向</th><th>槓桿</th><th>幣種</th><th>進場價</th>
+          <th>即時價格</th><th>槓桿後報酬</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="monitorBody"></tbody>
+    </table>
   </div>
-</main>
+</div>
+
 <script>
-const API='https://api.bybit.com/v5/market/tickers?category=linear';
-let rows=[], mode='long';
-const $=id=>document.getElementById(id);
-function pct(x,d=4){return (Number(x)*100).toFixed(d)+'%'}
-function money(x){x=Number(x); if(!isFinite(x))return '--'; if(Math.abs(x)>=1e9)return '$'+(x/1e9).toFixed(2)+'B'; if(Math.abs(x)>=1e6)return '$'+(x/1e6).toFixed(2)+'M'; if(Math.abs(x)>=1e3)return '$'+(x/1e3).toFixed(2)+'K'; return '$'+x.toFixed(2)}
-function timeLeft(ms){const d=new Date(Number(ms)); if(!ms||isNaN(d))return '--'; return d.toLocaleString('zh-TW',{hour12:false,month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
-function risk(r){const t=Number(r.turnover24h||0), oi=Number(r.openInterestValue||0), f=Math.abs(Number(r.fundingRate||0)); let score=0; if(t<5e6)score+=2; else if(t<2e7)score+=1; if(oi<2e6)score+=1; if(f>0.01)score+=2; else if(f>0.003)score+=1; if(score>=4)return '<span class="neg">高</span>'; if(score>=2)return '<span class="warn">中</span>'; return '<span class="pos">低</span>'}
-function render(){
-  const q=$('search').value.trim().toUpperCase(); const minT=Number($('minTurnover').value||0); const limit=Number($('limit').value||10); const cap=Number($('capital').value||0), lev=Number($('lev').value||1);
-  let data=rows.filter(r=>r.symbol.endsWith('USDT') && (!q||r.symbol.includes(q)) && Number(r.turnover24h||0)>=minT);
-  if(mode==='long') data=data.filter(r=>Number(r.fundingRate)<0).sort((a,b)=>Number(a.fundingRate)-Number(b.fundingRate));
-  if(mode==='short') data=data.filter(r=>Number(r.fundingRate)>0).sort((a,b)=>Number(b.fundingRate)-Number(a.fundingRate));
-  if(mode==='abs') data=data.sort((a,b)=>Math.abs(Number(b.fundingRate))-Math.abs(Number(a.fundingRate)));
-  data=data.slice(0,limit);
-  $('tbody').innerHTML=data.map((r,i)=>{const f=Number(r.fundingRate||0), income=cap*lev*Math.abs(f); const dir=f<0?'做多收':'做空收';
-    return `<tr><td>${i+1}</td><td><b>${r.symbol}</b></td><td>${dir}</td><td class="${f<0?'neg':'pos'}">${pct(f)}</td><td>${r.fundingIntervalHour||'--'}h</td><td>${timeLeft(r.nextFundingTime)}</td><td>${money(income)}</td><td>${money(r.turnover24h)}</td><td>${money(r.openInterestValue)}</td><td>${r.markPrice||'--'}</td><td class="${Number(r.price24hPcnt)<0?'neg':'pos'}">${pct(r.price24hPcnt,2)}</td><td>${risk(r)}</td></tr>`
-  }).join('') || '<tr><td colspan="12">沒有符合條件的資料</td></tr>';
+const state = {
+  candidates: [],
+  selected: null,
+  refreshTimer: null,
+  ws: {},
+  notified: new Set()
+};
+
+const $ = id => document.getElementById(id);
+const n = x => Number(x);
+const pct = x => (n(x) * 100).toFixed(4) + "%";
+const money = x => (n(x) >= 0 ? "+" : "") + n(x).toFixed(2) + " USDT";
+const fmtPrice = x => {
+  x = n(x);
+  if (!isFinite(x)) return "--";
+  if (x >= 1000) return x.toFixed(2);
+  if (x >= 1) return x.toFixed(4);
+  return x.toPrecision(6);
+};
+const localTime = ms => new Date(n(ms)).toLocaleString("zh-TW", {hour12:false});
+const hhmm = ms => new Date(n(ms)).toLocaleTimeString("zh-TW", {hour12:false, hour:"2-digit", minute:"2-digit", second:"2-digit"});
+
+function settings(){
+  return {
+    source: $("source").value,
+    notional: n($("notional").value) || 5000,
+    feeRate: (n($("feePct").value) || 0) / 100,
+    safety: n($("safety").value) || 1.5,
+    exposureSec: Math.max(1, n($("exposureSec").value) || 6),
+    minTurnover: Math.max(0, n($("minTurnover").value) || 0),
+    refineN: Math.max(5, Math.min(30, n($("refineN").value) || 12)),
+    refreshSec: Math.max(10, n($("refreshSec").value) || 30)
+  };
 }
-async function load(){
-  $('tbody').innerHTML='<tr><td colspan="12">載入中...</td></tr>';
-  try{const res=await fetch(API,{cache:'no-store'}); const json=await res.json(); if(json.retCode!==0)throw new Error(json.retMsg||'API error'); rows=json.result.list||[];
-    $('updated').textContent=new Date().toLocaleTimeString('zh-TW',{hour12:false}); $('count').textContent=rows.length;
-    const neg=[...rows].filter(r=>Number(r.fundingRate)<0).sort((a,b)=>Number(a.fundingRate)-Number(b.fundingRate))[0];
-    const pos=[...rows].filter(r=>Number(r.fundingRate)>0).sort((a,b)=>Number(b.fundingRate)-Number(a.fundingRate))[0];
-    $('bestLong').textContent=neg?`${neg.symbol} ${pct(neg.fundingRate,3)}`:'--'; $('bestShort').textContent=pos?`${pos.symbol} ${pct(pos.fundingRate,3)}`:'--'; render();
-  }catch(e){$('tbody').innerHTML=`<tr><td colspan="12">讀取失敗：${e.message}。若 GitHub Pages 被 CORS 擋住，可改用 Cloudflare Worker 代理。</td></tr>`}
+function saveSettings(){
+  localStorage.setItem("fundingCpSettings", JSON.stringify(settings()));
 }
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); mode=t.dataset.mode; render()});
-['limit','search','minTurnover','capital','lev'].forEach(id=>$(id).addEventListener('input',render)); $('refresh').onclick=load; load(); setInterval(load,60000);
+function loadSettings(){
+  const s = JSON.parse(localStorage.getItem("fundingCpSettings") || "null");
+  if(!s) return;
+  if(s.source) $("source").value = s.source;
+  if(s.notional) $("notional").value = s.notional;
+  if(isFinite(s.feeRate)) $("feePct").value = (s.feeRate*100).toFixed(4);
+  if(s.safety) $("safety").value = s.safety;
+  if(s.exposureSec) $("exposureSec").value = s.exposureSec;
+  if(isFinite(s.minTurnover)) $("minTurnover").value = s.minTurnover;
+  if(s.refineN) $("refineN").value = s.refineN;
+  if(s.refreshSec) $("refreshSec").value = s.refreshSec;
+}
+
+function quantile(arr, q){
+  if(!arr.length) return 0;
+  const a = [...arr].sort((a,b)=>a-b);
+  const pos = (a.length - 1) * q;
+  const base = Math.floor(pos), rest = pos - base;
+  return a[base+1] !== undefined ? a[base] + rest*(a[base+1]-a[base]) : a[base];
+}
+
+async function fetchJson(url){
+  const r = await fetch(url, {cache:"no-store"});
+  if(!r.ok) throw new Error(`HTTP ${r.status}: ${url}`);
+  return r.json();
+}
+
+async function bybitUniverse(){
+  const j = await fetchJson("https://api.bybit.com/v5/market/tickers?category=linear");
+  if(j.retCode !== 0) throw new Error(j.retMsg || "Bybit API error");
+  return j.result.list
+    .filter(x => x.symbol.endsWith("USDT") && x.fundingRate !== "")
+    .map(x => ({
+      source:"bybit", symbol:x.symbol,
+      mark:n(x.markPrice || x.lastPrice),
+      funding:n(x.fundingRate),
+      nextFunding:n(x.nextFundingTime),
+      bid:n(x.bid1Price), ask:n(x.ask1Price),
+      turnover:n(x.turnover24h || 0),
+      intervalH:n(x.fundingIntervalHour || 0)
+    }));
+}
+async function bybitRisk(symbol, exposureSec, spreadRate){
+  const j = await fetchJson(`https://api.bybit.com/v5/market/kline?category=linear&symbol=${encodeURIComponent(symbol)}&interval=1&limit=30`);
+  if(j.retCode !== 0) throw new Error(j.retMsg || "Bybit kline error");
+  const rows = [...j.result.list].sort((a,b)=>n(a[0])-n(b[0]));
+  const closes = rows.map(r=>n(r[4])).filter(x=>x>0);
+  const rets = [];
+  for(let i=1;i<closes.length;i++) rets.push(Math.abs(closes[i]/closes[i-1]-1));
+  const q90 = quantile(rets,0.90);
+  return Math.max(q90*Math.sqrt(exposureSec/60), spreadRate*2);
+}
+
+async function binanceUniverse(){
+  const [p, b, t] = await Promise.all([
+    fetchJson("https://fapi.binance.com/fapi/v1/premiumIndex"),
+    fetchJson("https://fapi.binance.com/fapi/v1/ticker/bookTicker"),
+    fetchJson("https://fapi.binance.com/fapi/v1/ticker/24hr")
+  ]);
+  const book = new Map(b.map(x=>[x.symbol,x]));
+  const vol = new Map(t.map(x=>[x.symbol,x]));
+  return p.filter(x=>x.symbol.endsWith("USDT") && n(x.nextFundingTime)>0).map(x=>{
+    const bb=book.get(x.symbol)||{}, vv=vol.get(x.symbol)||{};
+    return {
+      source:"binance", symbol:x.symbol, mark:n(x.markPrice),
+      funding:n(x.lastFundingRate), nextFunding:n(x.nextFundingTime),
+      bid:n(bb.bidPrice), ask:n(bb.askPrice),
+      turnover:n(vv.quoteVolume || 0), intervalH:0
+    };
+  });
+}
+async function binanceRisk(symbol, exposureSec, spreadRate){
+  const rows = await fetchJson(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=1m&limit=30`);
+  const closes = rows.map(r=>n(r[4])).filter(x=>x>0);
+  const rets=[];
+  for(let i=1;i<closes.length;i++) rets.push(Math.abs(closes[i]/closes[i-1]-1));
+  const q90=quantile(rets,0.90);
+  return Math.max(q90*Math.sqrt(exposureSec/60), spreadRate*2);
+}
+
+function enrichBase(x, s){
+  const spreadRate = x.mark>0 && x.ask>x.bid && x.bid>0 ? (x.ask-x.bid)/x.mark : 0;
+  const prelimThreshold = s.feeRate + spreadRate*2*s.safety;
+  return {...x, spreadRate,
+    riskRate: Math.max(spreadRate*2, 0),
+    threshold: prelimThreshold,
+    cp: Math.abs(x.funding) / Math.max(prelimThreshold, 1e-9),
+    netRate: Math.abs(x.funding)-s.feeRate-Math.max(spreadRate*2,0)
+  };
+}
+function finalize(x,s,riskRate){
+  const threshold = s.feeRate + riskRate*s.safety;
+  const cp = Math.abs(x.funding)/Math.max(threshold,1e-9);
+  const netRate = Math.abs(x.funding)-s.feeRate-riskRate;
+  const netUSDT = s.notional*netRate;
+  let label="不建議", cls="bad";
+  if(cp>=1.20 && netUSDT>0){label="高 CP";cls="good";}
+  else if(cp>=1.00 && netUSDT>0){label="邊界可觀察";cls="warn";}
+  return {...x,riskRate,threshold,cp,netRate,netUSDT,label,cls};
+}
+function receiveSide(fr){
+  return fr < 0 ? "多方收" : fr > 0 ? "空方收" : "無";
+}
+
+async function refreshScanner(){
+  const s=settings(); saveSettings();
+  $("status").textContent="更新中：先抓全市場 Funding，再精算高 Funding 候選的短期風險...";
+  try{
+    const raw = s.source==="bybit" ? await bybitUniverse() : await binanceUniverse();
+    let base = raw
+      .filter(x=>x.mark>0 && Math.abs(x.funding)>0 && x.turnover>=s.minTurnover)
+      .map(x=>enrichBase(x,s))
+      .sort((a,b)=>Math.abs(b.funding)-Math.abs(a.funding));
+    const top=base.slice(0,s.refineN);
+    const riskFn=s.source==="bybit" ? bybitRisk : binanceRisk;
+    const refined=await Promise.all(top.map(async x=>{
+      try{
+        const rr=await riskFn(x.symbol,s.exposureSec,x.spreadRate);
+        return finalize(x,s,rr);
+      }catch(e){
+        return {...finalize(x,s,Math.max(x.spreadRate*2,0)), riskError:true};
+      }
+    }));
+    const refinedMap=new Map(refined.map(x=>[x.symbol,x]));
+    state.candidates=base.map(x=>refinedMap.get(x.symbol)||finalize(x,s,Math.max(x.spreadRate*2,0)))
+      .sort((a,b)=>b.cp-a.cp || b.netUSDT-a.netUSDT);
+    renderRank();
+    renderCandidateSelect();
+    $("status").textContent=`已更新 ${state.candidates.length} 個候選｜${new Date().toLocaleTimeString("zh-TW",{hour12:false})}｜來源：${s.source==="bybit"?"Bybit":"Binance"}`;
+  }catch(e){
+    console.error(e);
+    $("status").innerHTML=`<span class="bad">資料載入失敗：</span>${e.message}<br>若 GitHub Pages 被交易所 CORS／地區限制，可改用 Cloudflare Worker/Serverless Proxy。`;
+  }
+  resetRefreshTimer();
+}
+function resetRefreshTimer(){
+  clearTimeout(state.refreshTimer);
+  state.refreshTimer=setTimeout(refreshScanner, settings().refreshSec*1000);
+}
+
+function renderRank(){
+  const body=$("rankBody"); body.innerHTML="";
+  state.candidates.slice(0,40).forEach((x,i)=>{
+    const tr=document.createElement("tr"); tr.className="clickable";
+    tr.onclick=()=>selectSymbol(x.symbol);
+    tr.innerHTML=`
+      <td>${i+1}</td><td><b>${x.symbol}</b></td>
+      <td class="${Math.abs(x.funding)>=0.001?'warn':''}">${pct(x.funding)}</td>
+      <td>${receiveSide(x.funding)}</td><td>${fmtPrice(x.mark)}</td>
+      <td>${pct(x.riskRate)}</td><td>${pct(x.threshold)}</td>
+      <td class="${x.cls}"><b>${x.cp.toFixed(2)}</b></td>
+      <td class="${x.netUSDT>=0?'good':'bad'}">${money(x.netUSDT)}</td>
+      <td>${hhmm(x.nextFunding)}</td><td data-countdown="${x.nextFunding}">--</td>
+      <td>${(x.turnover/1e6).toFixed(1)}M</td><td class="${x.cls}">${x.label}${x.riskError?'*':''}</td>`;
+    body.appendChild(tr);
+  });
+}
+function renderCandidateSelect(){
+  const sel=$("candidateSelect");
+  const prev=state.selected?.symbol;
+  sel.innerHTML="";
+  state.candidates.slice(0,40).forEach((x,i)=>{
+    const op=document.createElement("option");
+    op.value=x.symbol;
+    op.textContent=`${i+1}. ${x.symbol}｜CP ${x.cp.toFixed(2)}｜Funding ${pct(x.funding)}｜${hhmm(x.nextFunding)}`;
+    sel.appendChild(op);
+  });
+  const want=state.candidates.find(x=>x.symbol===prev)?.symbol || state.candidates[0]?.symbol;
+  if(want){sel.value=want; selectSymbol(want,false);}
+}
+
+function selectSymbol(symbol, syncSelect=true){
+  const x=state.candidates.find(v=>v.symbol===symbol); if(!x)return;
+  state.selected=x;
+  if(syncSelect) $("candidateSelect").value=symbol;
+  $("kFunding").textContent=pct(x.funding);
+  $("kFunding").className=Math.abs(x.funding)>=0.001?"warn":"";
+  $("kCP").textContent=x.cp.toFixed(2);
+  $("kCP").className=x.cls;
+  $("kNet").textContent=money(x.netUSDT);
+  $("kNet").className=x.netUSDT>=0?"good":"bad";
+  $("kSide").textContent=receiveSide(x.funding);
+  updateTimeBanner();
+}
+
+function countdownText(ms){
+  let d=n(ms)-Date.now(), sign=d<0?-1:1; d=Math.abs(d);
+  const total=Math.floor(d/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60;
+  return `${sign<0?"+":"-"}${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+function timingStage(ms){
+  const d=(n(ms)-Date.now())/1000;
+  if(d>900) return {cls:"accent", text:"觀察期：距離結算超過 15 分鐘，先看 CP 是否持續。"};
+  if(d>300) return {cls:"good", text:"準備期：T-15～5 分鐘，確認 Funding、流動性與短時風險沒有快速惡化。"};
+  if(d>60) return {cls:"warn", text:"高關注：T-5～1 分鐘，避免只看 Funding，重新確認 CP 與安全門檻。"};
+  if(d>15) return {cls:"warn", text:"執行準備：T-60～15 秒。若要人工操作，現在應完成數量與方向核對。"};
+  if(d>5) return {cls:"bad", text:"高執行風險：T-15～5 秒。滑價與延遲會明顯影響結果。"};
+  if(d>=-5) return {cls:"bad", text:"T±5 秒不確定區：交易所不保證此時開／平倉一定被納入或排除該期 Funding。"};
+  if(d>=-30) return {cls:"warn", text:"結算後觀察：確認 Funding 是否入帳，再依預定退出規則處理，避免裸露方向拖太久。"};
+  return {cls:"muted", text:"本期結算已過；等待資料刷新取得下一次 Funding 時間。"};
+}
+function updateTimeBanner(){
+  const x=state.selected; if(!x)return;
+  const st=timingStage(x.nextFunding);
+  $("timeBanner").className=`banner ${st.cls}`;
+  $("timeBanner").textContent=`${x.symbol}｜結算 ${localTime(x.nextFunding)}｜倒數 ${countdownText(x.nextFunding)}｜${st.text}`;
+  fireNotifications(x);
+}
+function fireNotifications(x){
+  if(Notification.permission!=="granted")return;
+  const d=(x.nextFunding-Date.now())/1000;
+  const thresholds=[60,15,5];
+  thresholds.forEach(t=>{
+    if(d<=t && d>t-2){
+      const key=`${x.source}:${x.symbol}:${x.nextFunding}:${t}`;
+      if(state.notified.has(key))return;
+      state.notified.add(key);
+      new Notification(`${x.symbol} Funding T-${t}s`,{
+        body:`CP ${x.cp.toFixed(2)}｜Funding ${pct(x.funding)}｜預估淨收益 ${money(x.netUSDT)}`
+      });
+    }
+  });
+}
+
+setInterval(()=>{
+  document.querySelectorAll("[data-countdown]").forEach(el=>el.textContent=countdownText(el.dataset.countdown));
+  updateTimeBanner();
+},1000);
+
+$("candidateSelect").addEventListener("change",e=>selectSymbol(e.target.value));
+$("refreshBtn").addEventListener("click",refreshScanner);
+$("notifyBtn").addEventListener("click",async()=>{
+  if(!("Notification" in window)) return alert("此瀏覽器不支援通知。");
+  const p=await Notification.requestPermission();
+  alert(p==="granted"?"已啟用提示。":"通知權限未開啟。");
+});
+["source","notional","feePct","safety","exposureSec","minTurnover","refineN","refreshSec"].forEach(id=>{
+  $(id).addEventListener("change",()=>{saveSettings();refreshScanner();});
+});
+
+/* ---- 即時持倉監控 ---- */
+function monitorData(){
+  return [...document.querySelectorAll("#monitorBody tr")].map(tr=>({
+    name:tr.querySelector(".m-name").value,
+    source:tr.querySelector(".m-source").value,
+    side:tr.querySelector(".m-side").value,
+    leverage:tr.querySelector(".m-lev").value,
+    symbol:tr.querySelector(".m-symbol").value.toUpperCase().trim(),
+    buyPrice:tr.querySelector(".m-entry").value
+  }));
+}
+function saveMonitor(){localStorage.setItem("cryptoMonitorDataV2",JSON.stringify(monitorData()));}
+function loadMonitor(){
+  const v2=JSON.parse(localStorage.getItem("cryptoMonitorDataV2")||"null");
+  if(v2){v2.forEach(addMonitorRow);return;}
+  const old=JSON.parse(localStorage.getItem("cryptoMonitorData")||"[]");
+  old.forEach(x=>addMonitorRow({name:x.name,source:"binance",side:"long",leverage:x.leverage,symbol:x.symbol,buyPrice:x.buyPrice}));
+}
+function addMonitorRow(saved={}){
+  const tr=document.createElement("tr");
+  tr.innerHTML=`
+    <td><input class="m-name row-input" value="${saved.name||''}"></td>
+    <td><select class="m-source"><option value="binance">Binance</option><option value="bybit">Bybit</option></select></td>
+    <td><select class="m-side"><option value="long">LONG</option><option value="short">SHORT</option></select></td>
+    <td><input class="m-lev row-input" type="number" min="1" value="${saved.leverage||1}"></td>
+    <td><input class="m-symbol row-input" value="${saved.symbol||''}" placeholder="BTCUSDT"></td>
+    <td><input class="m-entry row-input" type="number" step="any" value="${saved.buyPrice||''}"></td>
+    <td class="m-price">--</td><td class="m-pnl">--</td>
+    <td><button class="m-del">刪除</button></td>`;
+  $("monitorBody").appendChild(tr);
+  tr.querySelector(".m-source").value=saved.source||"binance";
+  tr.querySelector(".m-side").value=saved.side||"long";
+  tr.querySelectorAll("input,select").forEach(el=>el.addEventListener("change",()=>{saveMonitor();connectMonitorRow(tr);}));
+  tr.querySelector(".m-del").onclick=()=>{tr.remove();saveMonitor();};
+  connectMonitorRow(tr);
+}
+function connectMonitorRow(tr){
+  const source=tr.querySelector(".m-source").value;
+  const symbol=tr.querySelector(".m-symbol").value.toUpperCase().trim();
+  if(!symbol)return;
+  const key=`${source}:${symbol}`;
+  if(state.ws[key] && [WebSocket.OPEN,WebSocket.CONNECTING].includes(state.ws[key].readyState))return;
+  try{
+    let ws;
+    if(source==="binance"){
+      ws=new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@markPrice@1s`);
+      ws.onmessage=e=>{
+        const d=JSON.parse(e.data); updateMonitorPrice(source,symbol,n(d.p||d.c));
+      };
+    }else{
+      ws=new WebSocket("wss://stream.bybit.com/v5/public/linear");
+      ws.onopen=()=>ws.send(JSON.stringify({op:"subscribe",args:[`tickers.${symbol}`]}));
+      ws.onmessage=e=>{
+        const d=JSON.parse(e.data);
+        if(d.topic===`tickers.${symbol}` && d.data) updateMonitorPrice(source,symbol,n(d.data.markPrice||d.data.lastPrice));
+      };
+    }
+    state.ws[key]=ws;
+  }catch(e){console.error(e);}
+}
+function updateMonitorPrice(source,symbol,price){
+  document.querySelectorAll("#monitorBody tr").forEach(tr=>{
+    if(tr.querySelector(".m-source").value!==source)return;
+    if(tr.querySelector(".m-symbol").value.toUpperCase().trim()!==symbol)return;
+    const entry=n(tr.querySelector(".m-entry").value), lev=n(tr.querySelector(".m-lev").value)||1;
+    const side=tr.querySelector(".m-side").value;
+    tr.querySelector(".m-price").textContent=fmtPrice(price);
+    if(entry>0){
+      const raw=(price-entry)/entry*(side==="long"?1:-1);
+      const pnl=raw*lev*100;
+      const cell=tr.querySelector(".m-pnl");
+      cell.textContent=(pnl>=0?"+":"")+pnl.toFixed(2)+"%";
+      cell.className="m-pnl "+(pnl>=0?"good":"bad");
+    }
+  });
+}
+$("addBlankBtn").onclick=()=>{addMonitorRow();saveMonitor();};
+$("addMonitorBtn").onclick=()=>{
+  const x=state.selected;if(!x)return;
+  addMonitorRow({
+    name:`CP ${x.cp.toFixed(2)}`,source:x.source,side:x.funding<0?"long":"short",
+    leverage:1,symbol:x.symbol,buyPrice:x.mark
+  });
+  saveMonitor();
+  document.querySelector("#monitorBody tr:last-child")?.scrollIntoView({behavior:"smooth",block:"center"});
+};
+
+loadSettings();
+loadMonitor();
+refreshScanner();
 </script>
 </body>
 </html>

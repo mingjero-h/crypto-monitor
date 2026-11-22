@@ -1,522 +1,275 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Funding CP 判斷器 + 即時監控</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Funding CP Pro｜資金費率風險與可執行淨收益監控</title>
 <style>
-:root{
-  --bg:#0b1020;--panel:#131a2b;--panel2:#182238;--text:#e8edf7;--muted:#9aa8bd;
-  --border:#2a3650;--good:#3ddc97;--warn:#ffd166;--bad:#ff6b6b;--accent:#74a7ff;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,"Noto Sans TC",sans-serif;background:var(--bg);color:var(--text);padding:18px}
-h1,h2{margin:0 0 12px}
-h1{font-size:24px}
-h2{font-size:19px}
-small,.muted{color:var(--muted)}
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
-label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
-select,input,button{
-  width:100%;background:#0f1627;color:var(--text);border:1px solid var(--border);
-  border-radius:8px;padding:9px 10px
-}
-button{cursor:pointer;background:#1c2a46}
-button:hover{border-color:var(--accent)}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.actions button{width:auto}
-.banner{
-  padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);
-  font-size:16px;font-weight:700;margin-top:12px
-}
-.good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)} .accent{color:var(--accent)}
-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
-th,td{border-bottom:1px solid var(--border);padding:8px 7px;text-align:center;white-space:nowrap}
-th{position:sticky;top:0;background:var(--panel2);z-index:1}
-tr.clickable:hover{background:#17233a;cursor:pointer}
-.tablewrap{overflow:auto;max-height:520px;border:1px solid var(--border);border-radius:10px}
-.kpi{background:var(--panel2);border:1px solid var(--border);padding:10px;border-radius:10px}
-.kpi b{display:block;font-size:18px;margin-top:4px}
-.tag{display:inline-block;padding:3px 7px;border-radius:999px;background:#222d43;border:1px solid var(--border)}
-.note{font-size:12px;line-height:1.55;color:var(--muted)}
-.row-input{min-width:90px}
-#candidateSelect{min-width:320px}
-@media(max-width:700px){body{padding:10px}th,td{font-size:12px;padding:6px}}
+:root{--bg:#08111f;--card:#101e31;--card2:#14253b;--line:#294057;--txt:#eff5fc;--muted:#9cb0c6;--accent:#73b8ff;--green:#4ee1ad;--amber:#ffcd74;--red:#ff828c;--radius:15px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 950px 400px at 85% -4%,#1a3456 0,transparent 70%),var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;font-size:14px}a{color:var(--accent)}button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
+.shell{max-width:1530px;margin:0 auto;padding:22px 20px 70px}.mast{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:15px;margin-bottom:18px}.eyebrow{color:var(--accent);text-transform:uppercase;letter-spacing:.16em;font-weight:800;font-size:11px}.mast h1{font-size:clamp(23px,2.6vw,35px);margin:5px 0 7px;letter-spacing:-.03em}.subtitle{color:var(--muted);margin:0;line-height:1.65;max-width:910px}.livepill{border:1px solid var(--line);background:#152941;border-radius:100px;padding:10px 15px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}.dot{width:8px;height:8px;border-radius:50%;background:#8b9bad}.dot.ok{background:var(--green);box-shadow:0 0 12px #4ee1ad66}.dot.err{background:var(--red)}
+.notice{background:#14233a;border:1px solid #3c5373;border-left:3px solid var(--amber);border-radius:10px;padding:12px 15px;color:#e1eaf6;line-height:1.7;margin-bottom:15px;font-size:13px}.notice b{color:var(--amber)}
+.panel{background:linear-gradient(180deg,#112039 0,#101c2d 100%);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:17px;box-shadow:0 12px 25px #00000018}.panelhead{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}.panel h2{margin:0;font-size:17px}.sectiontip{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.field{min-width:0}.field label{display:block;color:#bbcbdd;font-size:12px;margin-bottom:7px;line-height:1.4}.help{font-size:11px;color:var(--muted);line-height:1.45;margin-top:5px}.field input,.field select,.field textarea,.fullselect{width:100%;border:1px solid #39506b;background:#0b192b;color:var(--txt);border-radius:9px;padding:11px 10px;outline:none;min-height:43px}.field textarea{resize:vertical}.field input:focus,.field select:focus,.fullselect:focus{border-color:var(--accent);box-shadow:0 0 0 2px #73b8ff27}.field input[type=file]{padding:8px}.col2{grid-column:span 2}.col3{grid-column:span 3}.col6{grid-column:span 6}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.btn{background:#1b3956;border:1px solid #436482;color:#edf7ff;border-radius:9px;padding:10px 15px;font-weight:700}.btn:hover{background:#254e72}.btn.primary{background:#2668a4;border-color:#3581c1}.btn.quiet{background:#101e31}.btn.small{font-size:12px;padding:7px 10px}.btn.danger{background:#542a38;border-color:#7f4053}.status{color:var(--muted);font-size:12px;margin:11px 0 0;line-height:1.7;white-space:pre-wrap}.status.error{color:var(--red)}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:11px}.metric{background:#17283d;border:1px solid #2c4562;border-radius:11px;padding:13px;min-width:0}.metric span{font-size:12px;color:var(--muted);display:block;line-height:1.45}.metric strong{display:block;font-size:clamp(15px,1.7vw,22px);font-variant-numeric:tabular-nums;margin-top:6px;white-space:normal;overflow-wrap:anywhere}.metric small{display:block;color:var(--muted);margin-top:5px;line-height:1.45}.good{color:var(--green)!important}.warn{color:var(--amber)!important}.bad{color:var(--red)!important}.muted{color:var(--muted)!important}.selectedrow{display:grid;grid-template-columns:minmax(250px,1.6fr) minmax(120px,1fr);gap:12px;margin-bottom:13px}.tag{font-size:11px;font-weight:700;display:inline-block;border:1px solid currentColor;border-radius:999px;padding:3px 8px;white-space:nowrap}.judgement{margin-top:13px;background:#0d1c2f;border:1px solid #34506b;padding:13px;border-radius:11px;line-height:1.65}.judgement b{margin-right:5px}.details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:13px}.details>div{padding:10px;background:#13253a;border:1px solid #2d435b;border-radius:8px}.details dt{color:var(--muted);font-size:11px}.details dd{margin:5px 0 0;font-weight:700;font-variant-numeric:tabular-nums}.note{font-size:12px;color:var(--muted);line-height:1.65;margin-top:12px}.timebanner{border:1px solid #365274;background:#1b304b;border-radius:10px;padding:13px 15px;font-weight:700;line-height:1.55;margin-top:12px}.timebanner.bad{background:#3c2433;border-color:#8b4252}.timebanner.warn{background:#403323;border-color:#806343}.tablewrap{overflow:auto;max-height:620px;border:1px solid #2d435d;border-radius:12px}table{width:100%;border-collapse:collapse;font-size:12px;min-width:1170px}th,td{padding:10px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid #283e55;font-variant-numeric:tabular-nums}th{color:#b9cbe2;background:#1b3049;position:sticky;top:0;z-index:1;font-size:11px}th:nth-child(2),td:nth-child(2),th:last-child,td:last-child{text-align:left}tr.pick{cursor:pointer}tr.pick:hover{background:#1b304a}tr.active{background:#193b57}tbody tr:last-child td{border-bottom:none}.smallpill{font-size:10px;padding:3px 6px;border-radius:5px;background:#263d54;color:var(--muted)}.legend{display:flex;gap:11px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:11px;margin:12px 0 0}.footer{font-size:12px;color:var(--muted);line-height:1.8}.footer a{margin-right:15px}.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}.historysummary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}.monitor input,.monitor select{background:#09192c;border:1px solid #39516c;border-radius:7px;color:var(--txt);padding:8px;min-width:85px;max-width:145px}.monitor table{min-width:1050px}.monitor td,.monitor th{text-align:center}.monitor .m-name{min-width:120px}.empty{padding:28px 14px;text-align:center;color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1150px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.shell{padding:13px 10px 40px}.panel{padding:13px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.col2,.col3,.col6{grid-column:span 2}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.selectedrow{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,minmax(0,1fr))}.split{grid-template-columns:1fr}.metric strong{font-size:18px}}@media(max-width:370px){.grid{grid-template-columns:1fr}.col2,.col3,.col6{grid-column:auto}.metrics,.details{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<h1>Funding CP 判斷器 + 即時監控</h1>
-<p class="muted">資料源 → Funding 判斷器 → CP 排序 → 結算倒數／提示。CP = |Funding| ÷ 安全門檻；CP &gt; 1 代表 Funding 超過目前設定的安全門檻。</p>
-
-<div class="panel">
-  <h2>1. 資料源與判斷器</h2>
+<div class="shell">
+<header class="mast">
+  <div><div class="eyebrow">FUNDING INTELLIGENCE / V3.0</div><h1>Funding CP Pro <span style="color:#75a9d8;font-size:.55em">安全門檻・可執行性監控</span></h1><p class="subtitle">Bybit / Binance 永續合約｜即時 Funding 排查 → 訂單簿模擬成交 → 保本門檻 → 預期淨收益 → 事件風險 → 結算倒數與持倉監控</p></div>
+  <div class="livepill"><span class="dot" id="liveDot"></span><span id="liveLabel">尚未連線</span></div>
+</header>
+<div class="notice"><b>判斷原則：</b>沒有完整訂單簿、價格或有效風險假設時，不會標示「可執行」。使用者輸入的結算成功率與尾部風險屬於<b>情境假設</b>；未取得足夠同策略歷史樣本前，所有正向判斷僅供觀察，不是已驗證的獲利訊號。此頁不下單，也不連接交易帳戶。</div>
+<section class="panel" aria-label="策略與市場設定">
+  <div class="panelhead"><h2>01　策略與安全門檻設定</h2><div class="sectiontip">變更設定後按「重新掃描」｜設定儲存於本機瀏覽器</div></div>
   <div class="grid">
-    <div>
-      <label>資料源</label>
-      <select id="source">
-        <option value="bybit">Bybit USDT 永續</option>
-        <option value="binance">Binance USDⓈ-M 永續</option>
-      </select>
-    </div>
-    <div>
-      <label>單邊名義價值（USDT）</label>
-      <input id="notional" type="number" min="10" step="10" value="5000">
-    </div>
-    <div>
-      <label>新增反手部位來回成本（%）</label>
-      <input id="feePct" type="number" min="0" step="0.001" value="0.10">
-    </div>
-    <div>
-      <label>安全係數</label>
-      <input id="safety" type="number" min="0.1" step="0.1" value="1.5">
-    </div>
-    <div>
-      <label>結算前後曝險時間（秒）</label>
-      <input id="exposureSec" type="number" min="1" step="1" value="6">
-    </div>
-    <div>
-      <label>最低 24h 成交額（USDT）</label>
-      <input id="minTurnover" type="number" min="0" step="1000000" value="5000000">
-    </div>
-    <div>
-      <label>精算候選數</label>
-      <input id="refineN" type="number" min="5" max="30" step="1" value="12">
-    </div>
-    <div>
-      <label>自動刷新（秒）</label>
-      <input id="refreshSec" type="number" min="10" max="300" step="5" value="30">
-    </div>
+    <div class="field col2"><label for="source">交易所及商品</label><select id="source"><option value="bybit">Bybit USDT 永續</option><option value="binance">Binance USDⓈ-M 永續</option></select></div>
+    <div class="field col2"><label for="notional">新增倉位名義價值（USDT）</label><input id="notional" type="number" min="10" step="10" value="5000"></div>
+    <div class="field col2"><label for="strategy">收益計算基準</label><select id="strategy"><option value="new">新增收取 Funding 的單向倉</option><option value="hedge">對既有反向倉增加等額對沖</option></select><div class="help">對沖模式額外顯示舊倉與全組合資金費；排序採新增交易的增量收益</div></div>
+    <div class="field"><label for="takerFee">單邊 Taker 手續費（%）</label><input id="takerFee" type="number" min="0" max="2" step="0.001" value="0.055"></div>
+    <div class="field"><label for="manualProb">預設 Funding 取得率（%）</label><input id="manualProb" type="number" min="0" max="100" step="1" value="90"><div class="help">無足夠樣本時僅為假設</div></div>
+    <div class="field"><label for="manualAdverse">預設逆向價格損失（%）</label><input id="manualAdverse" type="number" min="0" max="20" step="0.01" value="0.03"><div class="help">不是由 1m K 線外推</div></div>
+    <div class="field"><label for="manualTail">預設額外尾部緩衝（%）</label><input id="manualTail" type="number" min="0" max="20" step="0.01" value="0.12"></div>
+    <div class="field"><label for="tailFactor">尾部風險倍率</label><input id="tailFactor" type="number" min="0" max="5" step="0.1" value="1"></div>
+    <div class="field"><label for="maxSpread">最高允許價差（%）</label><input id="maxSpread" type="number" min="0.001" max="10" step="0.01" value="0.30"></div>
+    <div class="field"><label for="minTurnover">最低 24h 成交額（USDT）</label><input id="minTurnover" type="number" min="0" step="1000000" value="5000000"><div class="help">只作初篩，不當作深度</div></div>
+    <div class="field"><label for="refineN">精算交易對數</label><input id="refineN" type="number" min="1" max="30" step="1" value="12"></div>
+    <div class="field"><label for="refreshSec">自動刷新（秒）</label><input id="refreshSec" type="number" min="20" max="300" step="5" value="45"></div>
+    <div class="field"><label for="exposureSec">預定曝險秒數（備註）</label><input id="exposureSec" type="number" min="1" max="600" step="1" value="6"><div class="help">需用相同時間窗的事件樣本</div></div>
   </div>
-  <div class="actions">
-    <button id="refreshBtn">立即刷新</button>
-    <button id="notifyBtn">啟用瀏覽器提示</button>
+  <div class="controls"><button class="btn primary" id="refreshBtn">↻ 重新掃描</button><button class="btn quiet" id="notifyBtn">啟用結算提醒</button><button class="btn quiet" id="resetBtn">恢復預設設定</button></div>
+  <p id="status" class="status" role="status">尚未載入行情。</p>
+</section>
+<section class="panel">
+  <div class="panelhead"><h2>02　候選幣種詳細判斷</h2><div class="sectiontip">所有金額以新增名義倉位計算；顯示即時資料來源狀態</div></div>
+  <div class="selectedrow"><div class="field"><label for="candidateSelect">選擇交易對（已精算優先）</label><select id="candidateSelect" class="fullselect"><option value="">等待行情...</option></select></div><div class="field"><label>單獨補做深度精算</label><button id="refineOneBtn" class="btn" style="width:100%;min-height:43px">精算目前選取</button></div></div>
+  <div class="metrics">
+    <div class="metric"><span>預估 Funding</span><strong id="kFunding">--</strong><small id="kFundingSide">--</small></div>
+    <div class="metric"><span>保本 Funding</span><strong id="kBE">--</strong><small>期望損益為 0</small></div>
+    <div class="metric"><span>風險安全門檻</span><strong id="kSafe">--</strong><small>包含額外尾部緩衝</small></div>
+    <div class="metric"><span>風險調整 CP</span><strong id="kCP">--</strong><small>≥1 僅代表通過本情境</small></div>
+    <div class="metric"><span>新增交易預期淨收益</span><strong id="kNet">--</strong><small id="kP">含結算取得率</small></div>
+    <div class="metric"><span>交易可執行性</span><strong id="kQuality">--</strong><small id="kSample">--</small></div>
   </div>
-  <p id="status" class="note">尚未載入。</p>
+  <div class="judgement" id="judgement">選擇候選幣種查看計算細節。</div>
+  <dl class="details" id="detailGrid">
+    <div><dt>買／賣 VWAP</dt><dd id="dVWAP">--</dd></div><div><dt>訂單簿來回成本</dt><dd id="dDepth">--</dd></div><div><dt>雙邊手續費</dt><dd id="dFee">--</dd></div>
+    <div><dt>預期逆向損失</dt><dd id="dAdverse">--</dd></div><div><dt>額外尾部緩衝</dt><dd id="dTail">--</dd></div><div><dt>訂單簿更新時間／來源</dt><dd id="dFresh">--</dd></div>
+    <div><dt>既有倉 Funding（基準）</dt><dd id="dBaseline">--</dd></div><div><dt>新增倉 Funding（若成功）</dt><dd id="dNewFunding">--</dd></div><div><dt>全組合 Funding（若都成功）</dt><dd id="dPortfolio">--</dd></div>
+  </dl>
+  <div class="timebanner" id="timeBanner">等待結算時間資料...</div>
+  <p class="note">深度成本：用當前買一至多檔賣盤／賣一至多檔買盤，模擬相同基礎幣數量的市價買入與賣出，得出快照買賣 VWAP 差；<b>不是</b>保證未來平倉價。保本門檻 = (手續費＋快照深度成本＋預期逆向損失) ÷ Funding 取得率；安全門檻再加上尾部風險緩衝。現貨方向價格波動與結算資格仍可能使實際結果不同。</p>
+</section>
+<section class="panel">
+  <div class="panelhead"><h2>03　全市場候選排行</h2><div class="sectiontip">以預估淨收益排序｜未精算及深度不足不得出現合格訊號</div></div>
+  <div class="tablewrap"><table aria-label="資金費率候選排行"><thead><tr><th>#</th><th>交易對</th><th>Funding</th><th>收費方</th><th>24h 成交額</th><th>Spread</th><th>深度成本</th><th>保本 Funding</th><th>安全 Funding</th><th>CP</th><th>預期淨收益</th><th>樣本</th><th>倒數</th><th>狀態</th></tr></thead><tbody id="rankBody"><tr><td colspan="14" class="empty">資料載入中...</td></tr></tbody></table></div>
+  <div class="legend"><span class="tag warn">情境通過</span> 假設未經充分驗證　<span class="tag good">歷史樣本參考通過</span> 仍有未來風險　<span class="tag bad">深度不足／資料異常</span> 不可判定　<span class="tag muted">尚未精算</span> 不列入有效 CP</div>
+</section>
+<section class="panel">
+  <div class="panelhead"><h2>04　歷史結算事件樣本（選用）</h2><div class="sectiontip">100 筆以上同平台／交易對／同策略執行方式，才啟用歷史統計參考</div></div>
+  <div class="split"><div>
+    <p class="note" style="margin-top:0">可匯入你自己的實際交易結算紀錄 CSV，用來估計「成功取得 Funding 的比率」、「平均逆向價格損失」及「最差 5% 逆向價格損失的平均值（ES95）」。事件必須採相同策略、相同時間窗與口徑；不同策略不可混用。沒有真實樣本時繼續使用<b>手動假設</b>，不會偽造 ES95。</p>
+    <div class="field"><label for="eventFile">匯入 CSV（僅保存在此瀏覽器，不會上傳伺服器）</label><input type="file" id="eventFile" accept=".csv,text/csv"></div>
+    <div class="controls"><button class="btn small" id="sampleCsvBtn">下載 CSV 格式範例</button><button class="btn small danger" id="clearEventsBtn">清除已匯入事件</button></div>
+  </div><div>
+    <div class="details" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0"><div><dt>已匯入事件</dt><dd id="historyCount">0 筆</dd></div><div><dt>有效交易對</dt><dd id="historySymbols">0 個</dd></div><div><dt>目前選取交易對</dt><dd id="historyActive">--</dd></div><div><dt>歷史 ES95（若樣本足夠）</dt><dd id="historyES">--</dd></div></div>
+    <p class="note">必要欄位：<code>exchange,symbol,strategy,exposure_sec,received,adverse_pct</code>；strategy 使用 new（單向）／hedge（對沖），exposure_sec 與設定秒數相同才會列入統計。received 使用 1／0；adverse_pct 是該次進場至出場由價格變動造成的<b>損失百分比</b>，有利價格變動填 0，例如 <code>0.12</code> 表示 0.12%。樣本不能混用不同曝險秒數或執行方法。匯入檔不包含密鑰、帳號資料。</p>
+  </div></div>
+  <p class="status" id="eventStatus" role="status"></p>
+</section>
+<section class="panel monitor">
+  <div class="panelhead"><h2>05　即時持倉監控</h2><div class="sectiontip">沿用原網頁功能｜無需 API Key｜僅估算標記價格的槓桿後報酬，不含費用／Funding</div></div>
+  <div class="controls" style="margin-top:0;margin-bottom:12px"><button class="btn small" id="addBlankBtn">＋新增空白列</button><button class="btn small" id="addMonitorBtn">＋加入目前候選</button></div>
+  <div class="tablewrap" style="max-height:none"><table><thead><tr><th>名稱</th><th>交易所</th><th>方向</th><th>槓桿</th><th>交易對</th><th>進場價</th><th>即時標記價</th><th>槓桿後報酬</th><th>行情狀態</th><th>操作</th></tr></thead><tbody id="monitorBody"></tbody></table></div>
+  <div class="note">監控資訊僅儲存在你的裝置；WebSocket 無法連線時會標示「離線」，不以舊價格冒充即時價格。若瀏覽器關閉或背景被節流，提醒及行情可能中斷。</div>
+</section>
+<footer class="panel footer"><b>計算限制與資料來源</b>：Funding 為交易所當下公告的預估費率，結算時可能變更。交易深度只反映單次公開 Order Book 快照，不是已成交損益。模擬成本不包含清算風險、費率階梯、Maker 返佣、跨交易所基差、延遲影響、稅費等。持倉模式假定雙向持倉可用；單向模式的反向指令可能變成減倉。<br><a href="https://bybit-exchange.github.io/docs/v5/market/orderbook" target="_blank" rel="noopener">Bybit Order Book 文件</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Order-Book" target="_blank" rel="noopener">Binance Futures Depth 文件</a><a href="https://www.bybit.com/en/help-center/article/Funding-fee-calculation" target="_blank" rel="noopener">Bybit Funding 結算說明</a><br>純 HTML / CSS / JavaScript，可直接上傳 GitHub Pages；不依賴外部 JS 套件。</footer>
 </div>
-
-<div class="panel">
-  <h2>2. 高 CP 候選下拉選單</h2>
-  <div class="grid">
-    <div style="grid-column:span 2">
-      <label>依 CP 由高到低</label>
-      <select id="candidateSelect"><option>載入中...</option></select>
-    </div>
-    <div class="kpi"><span class="muted">Funding</span><b id="kFunding">--</b></div>
-    <div class="kpi"><span class="muted">CP</span><b id="kCP">--</b></div>
-    <div class="kpi"><span class="muted">預估額外淨收益</span><b id="kNet">--</b></div>
-    <div class="kpi"><span class="muted">收費方向</span><b id="kSide">--</b></div>
-  </div>
-  <div id="timeBanner" class="banner">等待資料...</div>
-  <div class="actions">
-    <button id="addMonitorBtn">加入下方即時監控</button>
-  </div>
-  <p class="note">
-    風險估計：抓候選幣最近 1 分鐘 K 線，取短期絕對報酬的高分位，再按曝險秒數縮放；並以 Bid/Ask spread 作最低風險底線。
-    這是篩選器，不是保證獲利。Bybit 對結算前後極短時間的開／平倉是否計入該期 Funding 不保證，因此 T±5 秒會特別標示為高執行不確定區。
-  </p>
-</div>
-
-<div class="panel">
-  <h2>3. CP 排名</h2>
-  <div class="tablewrap">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th><th>交易對</th><th>Funding</th><th>收費側</th><th>Mark</th>
-          <th>短時風險</th><th>安全門檻</th><th>CP</th><th>預估淨收益</th>
-          <th>下次結算</th><th>倒數</th><th>24h 成交額</th><th>判斷</th>
-        </tr>
-      </thead>
-      <tbody id="rankBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<div class="panel">
-  <h2>4. 即時持倉監控</h2>
-  <div class="actions"><button id="addBlankBtn">新增空白列</button></div>
-  <div class="tablewrap" style="max-height:none">
-    <table>
-      <thead>
-        <tr>
-          <th>名稱</th><th>來源</th><th>方向</th><th>槓桿</th><th>幣種</th><th>進場價</th>
-          <th>即時價格</th><th>槓桿後報酬</th><th>操作</th>
-        </tr>
-      </thead>
-      <tbody id="monitorBody"></tbody>
-    </table>
-  </div>
-</div>
-
 <script>
-const state = {
-  candidates: [],
-  selected: null,
-  refreshTimer: null,
-  ws: {},
-  notified: new Set()
-};
-
-const $ = id => document.getElementById(id);
-const n = x => Number(x);
-const pct = x => (n(x) * 100).toFixed(4) + "%";
-const money = x => (n(x) >= 0 ? "+" : "") + n(x).toFixed(2) + " USDT";
-const fmtPrice = x => {
-  x = n(x);
-  if (!isFinite(x)) return "--";
-  if (x >= 1000) return x.toFixed(2);
-  if (x >= 1) return x.toFixed(4);
-  return x.toPrecision(6);
-};
-const localTime = ms => new Date(n(ms)).toLocaleString("zh-TW", {hour12:false});
-const hhmm = ms => new Date(n(ms)).toLocaleTimeString("zh-TW", {hour12:false, hour:"2-digit", minute:"2-digit", second:"2-digit"});
-
-function settings(){
-  return {
-    source: $("source").value,
-    notional: n($("notional").value) || 5000,
-    feeRate: (n($("feePct").value) || 0) / 100,
-    safety: n($("safety").value) || 1.5,
-    exposureSec: Math.max(1, n($("exposureSec").value) || 6),
-    minTurnover: Math.max(0, n($("minTurnover").value) || 0),
-    refineN: Math.max(5, Math.min(30, n($("refineN").value) || 12)),
-    refreshSec: Math.max(10, n($("refreshSec").value) || 30)
-  };
-}
-function saveSettings(){
-  localStorage.setItem("fundingCpSettings", JSON.stringify(settings()));
-}
+'use strict';
+const $=id=>document.getElementById(id);
+const N=x=>Number(x);
+const goodNum=x=>typeof x==='number'&&Number.isFinite(x);
+const percent=x=>goodNum(x)?(x*100).toFixed(Math.abs(x)<0.0001?5:4)+'%':'--';
+const usd=x=>goodNum(x)?(x>=0?'+':'')+x.toFixed(2)+' USDT':'--';
+const fx=x=>goodNum(x)?(x>=1000?x.toFixed(2):x>=1?x.toFixed(4):x.toPrecision(6)):'--';
+const twTime=ts=>goodNum(ts)&&ts>0?new Date(ts).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}):'--';
+const htmlEscape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
+const defaults={source:'bybit',notional:5000,strategy:'new',takerFee:0.055,manualProb:90,manualAdverse:0.03,manualTail:0.12,tailFactor:1,maxSpread:0.3,minTurnover:5000000,refineN:12,refreshSec:45,exposureSec:6};
+const inputs=Object.keys(defaults);
+const state={candidates:[],selected:null,timer:null,generation:0,loading:false,events:[],notified:new Set(),streams:new Map(),renderedAt:0};
+function readStore(k,fallback){try{const x=localStorage.getItem(k);return x?JSON.parse(x):fallback}catch{return fallback}}
+function writeStore(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn('本機儲存失敗',e)}}
 function loadSettings(){
-  const s = JSON.parse(localStorage.getItem("fundingCpSettings") || "null");
-  if(!s) return;
-  if(s.source) $("source").value = s.source;
-  if(s.notional) $("notional").value = s.notional;
-  if(isFinite(s.feeRate)) $("feePct").value = (s.feeRate*100).toFixed(4);
-  if(s.safety) $("safety").value = s.safety;
-  if(s.exposureSec) $("exposureSec").value = s.exposureSec;
-  if(isFinite(s.minTurnover)) $("minTurnover").value = s.minTurnover;
-  if(s.refineN) $("refineN").value = s.refineN;
-  if(s.refreshSec) $("refreshSec").value = s.refreshSec;
+  let s=readStore('fundingCpProSettingsV3',null);
+  if(!s){const old=readStore('fundingCpSettings',null);s={};if(old){for(const k of ['source','notional','minTurnover','refineN','refreshSec','exposureSec'])if(old[k]!=null)s[k]=old[k];if(goodNum(old.feeRate))s.takerFee=old.feeRate*100/2}}
+  for(const [k,v] of Object.entries({...defaults,...s}))if($(k))$(k).value=v;
 }
-
-function quantile(arr, q){
-  if(!arr.length) return 0;
-  const a = [...arr].sort((a,b)=>a-b);
-  const pos = (a.length - 1) * q;
-  const base = Math.floor(pos), rest = pos - base;
-  return a[base+1] !== undefined ? a[base] + rest*(a[base+1]-a[base]) : a[base];
+function settings(){const r={};for(const k of inputs){const el=$(k);r[k]=el.tagName==='SELECT'?el.value:N(el.value)};
+  for(const k of ['notional','refineN','refreshSec','exposureSec'])r[k]=Math.round(r[k]);
+  if(!Number.isFinite(r.notional)||r.notional<10)throw Error('名義價值至少 10 USDT');
+  if(!Number.isInteger(r.refineN)||r.refineN<1||r.refineN>30)throw Error('精算交易對數須介於 1～30');
+  if(r.refreshSec<20||r.refreshSec>300)throw Error('刷新秒數須介於 20～300');
+  if(r.exposureSec<1||r.exposureSec>600)throw Error('曝險秒數須介於 1～600');
+  for(const [k,lo,hi] of [['takerFee',0,2],['manualProb',0,100],['manualAdverse',0,20],['manualTail',0,20],['tailFactor',0,5],['maxSpread',0.001,10],['minTurnover',0,Infinity]])if(!Number.isFinite(r[k])||r[k]<lo||r[k]>hi)throw Error(`${$(k).previousElementSibling?.textContent||k} 超出允許範圍`);
+  return r;
 }
-
-async function fetchJson(url){
-  const r = await fetch(url, {cache:"no-store"});
-  if(!r.ok) throw new Error(`HTTP ${r.status}: ${url}`);
-  return r.json();
+function saveSettings(){try{writeStore('fundingCpProSettingsV3',settings())}catch{}}
+function renderStatus(text,isError=false){$('status').textContent=text;$('status').classList.toggle('error',isError);$('liveDot').className='dot '+(isError?'err':state.candidates.length?'ok':'');$('liveLabel').textContent=isError?'行情連線異常':state.loading?'掃描中':state.candidates.length?'行情已更新':'尚未連線'}
+async function fetchJson(url,timeout=15000){const ctl=new AbortController();const id=setTimeout(()=>ctl.abort(),timeout);try{const r=await fetch(url,{cache:'no-store',signal:ctl.signal});if(!r.ok)throw Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(id)}}
+async function universe(source){
+ if(source==='bybit'){
+  const j=await fetchJson('https://api.bybit.com/v5/market/tickers?category=linear');if(j.retCode!==0||!Array.isArray(j.result?.list))throw Error('Bybit Tickers API 錯誤 '+(j.retMsg||''));
+  return j.result.list.filter(x=>/^[A-Z0-9]+USDT$/.test(x.symbol)&&x.fundingRate!==''&&N(x.nextFundingTime)>Date.now()-60000).map(x=>({source,symbol:x.symbol,mark:N(x.markPrice),funding:N(x.fundingRate),nextFunding:N(x.nextFundingTime),bid:N(x.bid1Price),ask:N(x.ask1Price),turnover:N(x.turnover24h)||0}));
+ }
+ const [p,b,t]=await Promise.all([fetchJson('https://fapi.binance.com/fapi/v1/premiumIndex'),fetchJson('https://fapi.binance.com/fapi/v1/ticker/bookTicker'),fetchJson('https://fapi.binance.com/fapi/v1/ticker/24hr')]);
+ if(!Array.isArray(p)||!Array.isArray(b)||!Array.isArray(t))throw Error('Binance 行情回傳格式不符');
+ const bm=new Map(b.map(x=>[x.symbol,x])),tm=new Map(t.map(x=>[x.symbol,x]));
+ return p.filter(x=>/^[A-Z0-9]+USDT$/.test(x.symbol)&&N(x.nextFundingTime)>Date.now()-60000).map(x=>{const bb=bm.get(x.symbol)||{},tt=tm.get(x.symbol)||{};return{source,symbol:x.symbol,mark:N(x.markPrice),funding:N(x.lastFundingRate),nextFunding:N(x.nextFundingTime),bid:N(bb.bidPrice),ask:N(bb.askPrice),turnover:N(tt.quoteVolume)||0}});
 }
-
-async function bybitUniverse(){
-  const j = await fetchJson("https://api.bybit.com/v5/market/tickers?category=linear");
-  if(j.retCode !== 0) throw new Error(j.retMsg || "Bybit API error");
-  return j.result.list
-    .filter(x => x.symbol.endsWith("USDT") && x.fundingRate !== "")
-    .map(x => ({
-      source:"bybit", symbol:x.symbol,
-      mark:n(x.markPrice || x.lastPrice),
-      funding:n(x.fundingRate),
-      nextFunding:n(x.nextFundingTime),
-      bid:n(x.bid1Price), ask:n(x.ask1Price),
-      turnover:n(x.turnover24h || 0),
-      intervalH:n(x.fundingIntervalHour || 0)
-    }));
+async function getBook(x){const s=encodeURIComponent(x.symbol);let j,bids,asks,exchangeTs=null;
+ if(x.source==='bybit'){
+  j=await fetchJson(`https://api.bybit.com/v5/market/orderbook?category=linear&symbol=${s}&limit=200`);
+  if(j.retCode!==0||!j.result)throw Error(j.retMsg||'Bybit orderbook 無效');bids=j.result.b;asks=j.result.a;exchangeTs=N(j.result.ts||j.time||0)||null;
+ }else{j=await fetchJson(`https://fapi.binance.com/fapi/v1/depth?symbol=${s}&limit=100`);bids=j.bids;asks=j.asks;exchangeTs=N(j.E||j.T||0)||null}
+ if(!Array.isArray(bids)||!Array.isArray(asks)||!bids.length||!asks.length)throw Error('訂單簿資料不完整');
+ const clean=a=>a.map(([p,q])=>[N(p),N(q)]).filter(([p,q])=>p>0&&q>0&&Number.isFinite(p)&&Number.isFinite(q));
+ return{bids:clean(bids).sort((a,b)=>b[0]-a[0]),asks:clean(asks).sort((a,b)=>a[0]-b[0]),exchangeTs,receiveTs:Date.now()};
 }
-async function bybitRisk(symbol, exposureSec, spreadRate){
-  const j = await fetchJson(`https://api.bybit.com/v5/market/kline?category=linear&symbol=${encodeURIComponent(symbol)}&interval=1&limit=30`);
-  if(j.retCode !== 0) throw new Error(j.retMsg || "Bybit kline error");
-  const rows = [...j.result.list].sort((a,b)=>n(a[0])-n(b[0]));
-  const closes = rows.map(r=>n(r[4])).filter(x=>x>0);
-  const rets = [];
-  for(let i=1;i<closes.length;i++) rets.push(Math.abs(closes[i]/closes[i-1]-1));
-  const q90 = quantile(rets,0.90);
-  return Math.max(q90*Math.sqrt(exposureSec/60), spreadRate*2);
+function calcVWAP(levels,qty){let rest=qty,notional=0;for(const [p,q] of levels){const filled=Math.min(rest,q);notional+=p*filled;rest-=filled;if(rest<=qty*1e-9)break}return rest<=qty*1e-9?notional/qty:null}
+function inspectBook(x,book,s){
+ if(!(x.mark>0))throw Error('標記價格缺失');
+ const bb=book.bids[0]?.[0],aa=book.asks[0]?.[0];if(!(bb>0&&aa>=bb))throw Error('無效買賣價差');
+ if(book.exchangeTs&&Math.abs(Date.now()-book.exchangeTs)>30000)throw Error('訂單簿時間過期／與本機時鐘差異過大');
+ const qty=s.notional/x.mark,buy=calcVWAP(book.asks,qty),sell=calcVWAP(book.bids,qty);
+ if(buy==null||sell==null)throw Error('指定名義價值無法由目前深度雙向完整成交');
+ const spread=(aa-bb)/x.mark;
+ if(spread>s.maxSpread/100)throw Error('價差超過允許門檻 '+(spread*100).toFixed(3)+'%');
+ const cost=Math.max(0,(buy-sell)/x.mark);
+ if(!Number.isFinite(cost)||cost<0)throw Error('深度成本異常');
+ return{buy,sell,spread,depthRate:cost,bookTs:book.exchangeTs,receivedAt:book.receiveTs,qty};
 }
-
-async function binanceUniverse(){
-  const [p, b, t] = await Promise.all([
-    fetchJson("https://fapi.binance.com/fapi/v1/premiumIndex"),
-    fetchJson("https://fapi.binance.com/fapi/v1/ticker/bookTicker"),
-    fetchJson("https://fapi.binance.com/fapi/v1/ticker/24hr")
-  ]);
-  const book = new Map(b.map(x=>[x.symbol,x]));
-  const vol = new Map(t.map(x=>[x.symbol,x]));
-  return p.filter(x=>x.symbol.endsWith("USDT") && n(x.nextFundingTime)>0).map(x=>{
-    const bb=book.get(x.symbol)||{}, vv=vol.get(x.symbol)||{};
-    return {
-      source:"binance", symbol:x.symbol, mark:n(x.markPrice),
-      funding:n(x.lastFundingRate), nextFunding:n(x.nextFundingTime),
-      bid:n(bb.bidPrice), ask:n(bb.askPrice),
-      turnover:n(vv.quoteVolume || 0), intervalH:0
-    };
-  });
+function quantile(arr,q){if(!arr.length)return null;const a=[...arr].sort((a,b)=>a-b);const pos=(a.length-1)*q,lo=Math.floor(pos),hi=Math.ceil(pos);return a[lo]+(a[hi]-a[lo])*(pos-lo)}
+function eventStats(source,symbol,s){const a=state.events.filter(e=>e.exchange===source&&e.symbol===symbol&&e.strategy===s.strategy&&e.exposureSec===s.exposureSec),count=a.length;if(!count)return{count:0,valid:false,prob:null,mean:null,es95:null};
+ const p=a.filter(e=>e.received).length/count;
+ const losses=a.map(e=>e.adverseRate).sort((x,y)=>y-x),worst=losses.slice(0,Math.max(1,Math.ceil(count*.05)));
+ return{count,valid:count>=100,prob:p,mean:losses.reduce((x,y)=>x+y,0)/count,es95:worst.reduce((x,y)=>x+y,0)/worst.length};
 }
-async function binanceRisk(symbol, exposureSec, spreadRate){
-  const rows = await fetchJson(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=1m&limit=30`);
-  const closes = rows.map(r=>n(r[4])).filter(x=>x>0);
-  const rets=[];
-  for(let i=1;i<closes.length;i++) rets.push(Math.abs(closes[i]/closes[i-1]-1));
-  const q90=quantile(rets,0.90);
-  return Math.max(q90*Math.sqrt(exposureSec/60), spreadRate*2);
+function compute(x,s){
+ if(x.depth && (Date.now()-x.depth.receivedAt>90000 || x.depth.receivedAt>Date.now()+30000)){x={...x,depth:null,problem:'深度快照已過期，等待重新刷新'};}
+ if(!x.depth)return{...x,score:null,expected:null,be:null,safe:null,quality:'不可精算',label:x.problem||'未精算',klass:'muted',stats:eventStats(x.source,x.symbol,s)};
+ const st=eventStats(x.source,x.symbol,s);const probability=st.valid?st.prob:s.manualProb/100;
+ const adverse=st.valid?st.mean:s.manualAdverse/100;
+ const tailExcess=st.valid?Math.max(0,st.es95-st.mean):s.manualTail/100;
+ const tail=tailExcess*s.tailFactor;
+ const feeRate=s.takerFee/100*2;const depthRate=x.depth.depthRate;
+ const c=feeRate+depthRate+adverse;
+ const funding=Math.abs(x.funding),num=funding*probability,den=c+tail;
+ const expectedRate=num-c;const expected=s.notional*expectedRate;
+ const be=probability>0?c/probability:null;const safe=probability>0?(c+tail)/probability:null;
+ const cp=den>0?num/den:(num>0?9999:0);
+ const ok=expected>0&&num>=den&&probability>0;
+ const near=expected>0&&num<den;
+ const label=ok?(st.valid?'歷史樣本參考通過':'情境通過（未驗證）'):near?'未達安全門檻':'預期淨利非正';
+ return{...x,feeRate,probability,adverse,tail,tailExcess,expectedRate,expected,be,safe,cp,score:expected,quality:st.valid?'歷史樣本':'情境假設',label,klass:ok?(st.valid?'good':'warn'):near?'warn':'bad',stats:st};
 }
-
-function enrichBase(x, s){
-  const spreadRate = x.mark>0 && x.ask>x.bid && x.bid>0 ? (x.ask-x.bid)/x.mark : 0;
-  const prelimThreshold = s.feeRate + spreadRate*2*s.safety;
-  return {...x, spreadRate,
-    riskRate: Math.max(spreadRate*2, 0),
-    threshold: prelimThreshold,
-    cp: Math.abs(x.funding) / Math.max(prelimThreshold, 1e-9),
-    netRate: Math.abs(x.funding)-s.feeRate-Math.max(spreadRate*2,0)
-  };
-}
-function finalize(x,s,riskRate){
-  const threshold = s.feeRate + riskRate*s.safety;
-  const cp = Math.abs(x.funding)/Math.max(threshold,1e-9);
-  const netRate = Math.abs(x.funding)-s.feeRate-riskRate;
-  const netUSDT = s.notional*netRate;
-  let label="不建議", cls="bad";
-  if(cp>=1.20 && netUSDT>0){label="高 CP";cls="good";}
-  else if(cp>=1.00 && netUSDT>0){label="邊界可觀察";cls="warn";}
-  return {...x,riskRate,threshold,cp,netRate,netUSDT,label,cls};
-}
-function receiveSide(fr){
-  return fr < 0 ? "多方收" : fr > 0 ? "空方收" : "無";
-}
-
+async function runPool(items,limit,worker){let next=0;const results=new Array(items.length);await Promise.all(Array.from({length:Math.min(items.length,limit)},async()=>{while(next<items.length){const i=next++;try{results[i]=await worker(items[i],i)}catch(e){results[i]=e}}}));return results}
+function sortCandidates(a,b){const ac=goodNum(a.score),bc=goodNum(b.score);if(ac!==bc)return ac?-1:1;if(ac&&bc)return b.score-a.score;if(a.problem!==b.problem)return a.problem?-1:1;return Math.abs(b.funding)-Math.abs(a.funding)}
 async function refreshScanner(){
-  const s=settings(); saveSettings();
-  $("status").textContent="更新中：先抓全市場 Funding，再精算高 Funding 候選的短期風險...";
-  try{
-    const raw = s.source==="bybit" ? await bybitUniverse() : await binanceUniverse();
-    let base = raw
-      .filter(x=>x.mark>0 && Math.abs(x.funding)>0 && x.turnover>=s.minTurnover)
-      .map(x=>enrichBase(x,s))
-      .sort((a,b)=>Math.abs(b.funding)-Math.abs(a.funding));
-    const top=base.slice(0,s.refineN);
-    const riskFn=s.source==="bybit" ? bybitRisk : binanceRisk;
-    const refined=await Promise.all(top.map(async x=>{
-      try{
-        const rr=await riskFn(x.symbol,s.exposureSec,x.spreadRate);
-        return finalize(x,s,rr);
-      }catch(e){
-        return {...finalize(x,s,Math.max(x.spreadRate*2,0)), riskError:true};
-      }
-    }));
-    const refinedMap=new Map(refined.map(x=>[x.symbol,x]));
-    state.candidates=base.map(x=>refinedMap.get(x.symbol)||finalize(x,s,Math.max(x.spreadRate*2,0)))
-      .sort((a,b)=>b.cp-a.cp || b.netUSDT-a.netUSDT);
-    renderRank();
-    renderCandidateSelect();
-    $("status").textContent=`已更新 ${state.candidates.length} 個候選｜${new Date().toLocaleTimeString("zh-TW",{hour12:false})}｜來源：${s.source==="bybit"?"Bybit":"Binance"}`;
-  }catch(e){
-    console.error(e);
-    $("status").innerHTML=`<span class="bad">資料載入失敗：</span>${e.message}<br>若 GitHub Pages 被交易所 CORS／地區限制，可改用 Cloudflare Worker/Serverless Proxy。`;
-  }
-  resetRefreshTimer();
-}
-function resetRefreshTimer(){
-  clearTimeout(state.refreshTimer);
-  state.refreshTimer=setTimeout(refreshScanner, settings().refreshSec*1000);
-}
-
-function renderRank(){
-  const body=$("rankBody"); body.innerHTML="";
-  state.candidates.slice(0,40).forEach((x,i)=>{
-    const tr=document.createElement("tr"); tr.className="clickable";
-    tr.onclick=()=>selectSymbol(x.symbol);
-    tr.innerHTML=`
-      <td>${i+1}</td><td><b>${x.symbol}</b></td>
-      <td class="${Math.abs(x.funding)>=0.001?'warn':''}">${pct(x.funding)}</td>
-      <td>${receiveSide(x.funding)}</td><td>${fmtPrice(x.mark)}</td>
-      <td>${pct(x.riskRate)}</td><td>${pct(x.threshold)}</td>
-      <td class="${x.cls}"><b>${x.cp.toFixed(2)}</b></td>
-      <td class="${x.netUSDT>=0?'good':'bad'}">${money(x.netUSDT)}</td>
-      <td>${hhmm(x.nextFunding)}</td><td data-countdown="${x.nextFunding}">--</td>
-      <td>${(x.turnover/1e6).toFixed(1)}M</td><td class="${x.cls}">${x.label}${x.riskError?'*':''}</td>`;
-    body.appendChild(tr);
+ if(state.loading)return;let s;try{s=settings()}catch(e){renderStatus('設定錯誤：'+e.message,true);return}
+ saveSettings();state.loading=true;const generation=++state.generation;renderStatus('讀取全市場 Funding、買賣價差與成交額...');
+ try{
+  const raw=await universe(s.source);const filtered=raw.filter(x=>Number.isFinite(x.mark)&&x.mark>0&&Number.isFinite(x.funding)&&x.funding!==0&&Number.isFinite(x.nextFunding)&&x.nextFunding>0&&x.turnover>=s.minTurnover);
+  const ordered=filtered.map(x=>({...x,depth:null,problem:null,spread0:x.bid>0&&x.ask>=x.bid?(x.ask-x.bid)/x.mark:null})).sort((a,b)=>{
+    const as=Math.abs(a.funding)-(a.spread0||0)-2*s.takerFee/100;const bs=Math.abs(b.funding)-(b.spread0||0)-2*s.takerFee/100;
+    return bs-as;
   });
+  const refining=ordered.slice(0,s.refineN);renderStatus(`符合成交額初篩 ${ordered.length} 個；正在精算前 ${refining.length} 個訂單簿...`);
+  const enriched=await runPool(refining,4,async x=>{try{const book=await getBook(x);const dep=inspectBook(x,book,s);return compute({...x,depth:dep,problem:null},s)}catch(e){return compute({...x,depth:null,problem:'不可精算：'+e.message},s)}});
+  if(generation!==state.generation)return;
+  const m=new Map(enriched.map(x=>[x.symbol,x]));state.candidates=ordered.map(x=>m.get(x.symbol)||compute({...x,problem:'尚未精算（可單獨精算）'},s)).sort(sortCandidates);
+  renderAll();renderStatus(`已更新 ${state.candidates.length} 個交易對｜已嘗試深度精算 ${refining.length} 個｜可完成精算 ${enriched.filter(x=>x.depth).length} 個｜${twTime(Date.now())}（台北時間）\n排序僅作候選分析；因頁面是純前端，交易所 CORS、地區限制或 API 限流可能使部分資料不可取得。`);
+ }catch(e){console.error(e);state.candidates=[];state.selected=null;renderAll();renderStatus('資料載入失敗：'+e.message+'。請檢查交易所 API 是否被地區或瀏覽器 CORS 限制；本頁不會使用假資料冒充即時行情。',true)}finally{state.loading=false;resetTimer();if(state.candidates.length)$('liveLabel').textContent='行情已更新';else if(!$('status').classList.contains('error'))$('liveLabel').textContent='尚無可用行情'}
 }
-function renderCandidateSelect(){
-  const sel=$("candidateSelect");
-  const prev=state.selected?.symbol;
-  sel.innerHTML="";
-  state.candidates.slice(0,40).forEach((x,i)=>{
-    const op=document.createElement("option");
-    op.value=x.symbol;
-    op.textContent=`${i+1}. ${x.symbol}｜CP ${x.cp.toFixed(2)}｜Funding ${pct(x.funding)}｜${hhmm(x.nextFunding)}`;
-    sel.appendChild(op);
-  });
-  const want=state.candidates.find(x=>x.symbol===prev)?.symbol || state.candidates[0]?.symbol;
-  if(want){sel.value=want; selectSymbol(want,false);}
+function resetTimer(){clearTimeout(state.timer);try{state.timer=setTimeout(refreshScanner,settings().refreshSec*1000)}catch{state.timer=setTimeout(refreshScanner,45000)}}
+async function refineSelected(){const x=state.selected;if(!x||!x.symbol)return;let s;try{s=settings()}catch(e){alert(e.message);return}
+ const generation=state.generation;$('refineOneBtn').disabled=true;$('refineOneBtn').textContent='深度精算中...';
+ try{const book=await getBook(x);const dep=inspectBook(x,book,s);if(generation!==state.generation)return;const y=compute({...x,depth:dep,problem:null},s);const i=state.candidates.findIndex(z=>z.source===x.source&&z.symbol===x.symbol);if(i>=0)state.candidates[i]=y;state.candidates.sort(sortCandidates);renderAll(x.symbol)}catch(e){if(generation!==state.generation)return;const y=compute({...x,depth:null,problem:'不可精算：'+e.message},s);const i=state.candidates.findIndex(z=>z.symbol===x.symbol);if(i>=0)state.candidates[i]=y;renderAll(x.symbol)}finally{$('refineOneBtn').disabled=false;$('refineOneBtn').textContent='精算目前選取'}
 }
-
-function selectSymbol(symbol, syncSelect=true){
-  const x=state.candidates.find(v=>v.symbol===symbol); if(!x)return;
-  state.selected=x;
-  if(syncSelect) $("candidateSelect").value=symbol;
-  $("kFunding").textContent=pct(x.funding);
-  $("kFunding").className=Math.abs(x.funding)>=0.001?"warn":"";
-  $("kCP").textContent=x.cp.toFixed(2);
-  $("kCP").className=x.cls;
-  $("kNet").textContent=money(x.netUSDT);
-  $("kNet").className=x.netUSDT>=0?"good":"bad";
-  $("kSide").textContent=receiveSide(x.funding);
-  updateTimeBanner();
+function renderAll(want){renderRank();renderCandidateSelect(want)}
+function countDown(ms){if(!ms||!Number.isFinite(ms))return '--';const delta=ms-Date.now(),s=Math.floor(Math.abs(delta)/1000);const h=String(Math.floor(s/3600)).padStart(2,'0'),m=String(Math.floor(s%3600/60)).padStart(2,'0'),ss=String(s%60).padStart(2,'0');return(delta<0?'+':'-')+h+':'+m+':'+ss}
+function renderRank(){const tbody=$('rankBody');tbody.replaceChildren();for(const [i,x] of state.candidates.slice(0,70).entries()){
+ const tr=document.createElement('tr');tr.className='pick'+(state.selected?.symbol===x.symbol?' active':'');tr.addEventListener('click',()=>chooseSymbol(x.symbol));
+ const cols=[i+1,x.symbol,percent(x.funding),receiveSide(x.funding),x.turnover>=1e9?(x.turnover/1e9).toFixed(2)+'B':(x.turnover/1e6).toFixed(1)+'M',x.depth?percent(x.depth.spread):x.spread0===null?'--':percent(x.spread0),x.depth?percent(x.depth.depthRate):'--',percent(x.be),percent(x.safe),goodNum(x.cp)?x.cp.toFixed(2):'--',usd(x.expected),x.stats?.count||0,countDown(x.nextFunding),x.label];
+ cols.forEach((c,idx)=>{const td=document.createElement('td');td.textContent=c;if(idx===1)td.style.fontWeight='800';if(idx===10&&goodNum(x.expected))td.className=x.expected>=0?'good':'bad';if(idx===13)td.className=x.klass; if(idx===12)td.dataset.countdown=x.nextFunding;tr.appendChild(td)});tbody.appendChild(tr)
+ }
+ if(!state.candidates.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=14;td.className='empty';td.textContent='尚無符合條件的行情或交易所資料無法取得';tr.appendChild(td);tbody.appendChild(tr)}
 }
-
-function countdownText(ms){
-  let d=n(ms)-Date.now(), sign=d<0?-1:1; d=Math.abs(d);
-  const total=Math.floor(d/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60;
-  return `${sign<0?"+":"-"}${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+function renderCandidateSelect(want){const select=$('candidateSelect'),previous=want||state.selected?.symbol;select.replaceChildren();const candidates=state.candidates.slice(0,250);
+ for(const [i,x] of candidates.entries()){const o=document.createElement('option');o.value=x.symbol;o.textContent=`${i+1}. ${x.symbol}｜Funding ${percent(x.funding)}｜${x.depth?`EV ${usd(x.expected)}`:x.label}`;select.appendChild(o)}
+ const target=candidates.find(x=>x.symbol===previous)?.symbol||candidates[0]?.symbol;
+ if(target){select.value=target;chooseSymbol(target,false)}else{state.selected=null;clearSelection()}
 }
-function timingStage(ms){
-  const d=(n(ms)-Date.now())/1000;
-  if(d>900) return {cls:"accent", text:"觀察期：距離結算超過 15 分鐘，先看 CP 是否持續。"};
-  if(d>300) return {cls:"good", text:"準備期：T-15～5 分鐘，確認 Funding、流動性與短時風險沒有快速惡化。"};
-  if(d>60) return {cls:"warn", text:"高關注：T-5～1 分鐘，避免只看 Funding，重新確認 CP 與安全門檻。"};
-  if(d>15) return {cls:"warn", text:"執行準備：T-60～15 秒。若要人工操作，現在應完成數量與方向核對。"};
-  if(d>5) return {cls:"bad", text:"高執行風險：T-15～5 秒。滑價與延遲會明顯影響結果。"};
-  if(d>=-5) return {cls:"bad", text:"T±5 秒不確定區：交易所不保證此時開／平倉一定被納入或排除該期 Funding。"};
-  if(d>=-30) return {cls:"warn", text:"結算後觀察：確認 Funding 是否入帳，再依預定退出規則處理，避免裸露方向拖太久。"};
-  return {cls:"muted", text:"本期結算已過；等待資料刷新取得下一次 Funding 時間。"};
+function clearSelection(){for(const k of ['kFunding','kBE','kSafe','kCP','kNet','kQuality','kFundingSide','kP','kSample','dVWAP','dDepth','dFee','dAdverse','dTail','dFresh','dBaseline','dNewFunding','dPortfolio'])$(k).textContent='--';$('judgement').textContent='目前沒有候選資料。';$('timeBanner').textContent='等待行情資料...';$('historyActive').textContent='--';$('historyES').textContent='--'}
+function receiveSide(fr){return fr>0?'空方收／多方付':fr<0?'多方收／空方付':'無'}
+function chooseSymbol(symbol,sync=true){const x=state.candidates.find(z=>z.symbol===symbol);if(!x)return;state.selected=x;if(sync)$('candidateSelect').value=symbol;
+ document.querySelectorAll('#rankBody tr').forEach(tr=>tr.classList.toggle('active',tr.children[1]?.textContent===x.symbol));
+ const s=settings();$('kFunding').textContent=percent(x.funding);$('kFundingSide').textContent=receiveSide(x.funding);$('kBE').textContent=percent(x.be);$('kSafe').textContent=percent(x.safe);$('kCP').textContent=goodNum(x.cp)?x.cp.toFixed(2):'--';$('kNet').textContent=usd(x.expected);$('kNet').className=goodNum(x.expected)?(x.expected>=0?'good':'bad'):'';$('kQuality').textContent=x.depth?(x.stats.valid?'事件樣本參考':'未驗證情境'):'尚未精算';$('kQuality').className=x.depth?(x.stats.valid?'good':'warn'):'bad';$('kSample').textContent=`事件樣本 ${x.stats.count} 筆`;
+ $('kP').textContent=x.depth?`Funding 取得率 ${(x.probability*100).toFixed(1)}%｜${x.stats.valid?'歷史樣本':'人工假設'}`:'缺少完整訂單簿';
+ $('dVWAP').textContent=x.depth?fx(x.depth.buy)+' / '+fx(x.depth.sell):'--';$('dDepth').textContent=percent(x.depth?.depthRate);$('dFee').textContent=x.depth?percent(x.feeRate):'--';$('dAdverse').textContent=percent(x.adverse);$('dTail').textContent=percent(x.tail);$('dFresh').textContent=x.depth?`${x.depth.bookTs?twTime(x.depth.bookTs)+' 交易所':'未提供交易所時間'}｜擷取 ${twTime(x.depth.receivedAt)}`:'--';
+ const base=s.strategy==='hedge'?-Math.abs(x.funding)*s.notional:0;const added=Math.abs(x.funding)*s.notional;
+ $('dBaseline').textContent=usd(base);$('dNewFunding').textContent=usd(added);$('dPortfolio').textContent=usd(base+added);
+ $('judgement').innerHTML=x.depth?`<b class="${x.klass}">${htmlEscape(x.label)}</b>｜當前交易對 ${htmlEscape(x.symbol)}。新增交易預期 Funding ${(x.probability*100).toFixed(1)}% × ${percent(Math.abs(x.funding))}，減去來回手續費、深度買賣成本與逆向損失；尾部緩衝用於安全門檻而非預期淨收益。${s.strategy==='hedge'?'既有倉假設是付 Funding 的反向同合約倉，且需支援雙向持倉。全組合 Funding 可互抵，但新增交易相對舊倉仍有正向 Funding 增量；不能將整體 Funding 0 當成新增收益 0。':'目前假設只新增一筆收取 Funding 的倉位。'}<br><span class="muted">${x.stats.valid?'統計源自已匯入同類事件，並非市場保證。':'缺少至少 100 筆同策略事件樣本，相關風險與成功率均屬人工假設，不建議據此自動下單。'}</span>`:`<b class="bad">${htmlEscape(x.label)}</b>｜未完成訂單簿雙邊完整成交檢查；CP、安全門檻及淨收益不予計算。`;
+ $('historyActive').textContent=x.symbol+'（'+x.stats.count+' 筆）';$('historyES').textContent=x.stats.valid?percent(x.stats.es95):'資料不足（需 ≥100 筆）';updateTimeBanner();
 }
-function updateTimeBanner(){
-  const x=state.selected; if(!x)return;
-  const st=timingStage(x.nextFunding);
-  $("timeBanner").className=`banner ${st.cls}`;
-  $("timeBanner").textContent=`${x.symbol}｜結算 ${localTime(x.nextFunding)}｜倒數 ${countdownText(x.nextFunding)}｜${st.text}`;
-  fireNotifications(x);
+function stage(ms){const d=(ms-Date.now())/1000;if(d>900)return['觀察期：距結算超過 15 分鐘，Funding 可能變動。',''];if(d>300)return['準備期：T-15～5 分鐘，重新檢查深度與風險。',''];if(d>60)return['高關注：T-5～1 分鐘，不要將 45 秒刷新視為秒級風險監控。','warn'];if(d>15)return['T-60～15 秒：人工操作仍需核對方向、倉位與持倉模式。','warn'];if(d>5)return['T-15～5 秒：委託延遲與滑價風險顯著，避免以假設值判斷。','bad'];if(d>=-5)return['結算 T±5 秒高不確定區；Bybit 不保證此時開平倉一定計入當期。','bad'];if(d>=-30)return['結算後：請以交易紀錄確認 Funding 是否入帳與實際成交成本。','warn'];return['結算已過；請刷新取得下一期時間。','']}
+function updateTimeBanner(){const x=state.selected;if(!x)return;const [msg,cls]=stage(x.nextFunding);$('timeBanner').className='timebanner '+cls;$('timeBanner').textContent=`${x.symbol}｜預估結算 ${twTime(x.nextFunding)}（台北時間）｜倒數 ${countDown(x.nextFunding)}｜${msg}`;notify(x)}
+function notify(x){if(!('Notification'in window)||Notification.permission!=='granted')return;const d=(x.nextFunding-Date.now())/1000;for(const t of [60,15,5])if(d<=t&&d>t-2){const key=[x.source,x.symbol,x.nextFunding,t].join(':');if(state.notified.has(key))continue;state.notified.add(key);try{new Notification(`${x.symbol} Funding T-${t}s`,{body:`Funding ${percent(x.funding)}｜${x.depth?'情境 EV '+usd(x.expected):'風險未完成精算'}｜請確認真實交易狀態`})}catch{}}}
+setInterval(()=>{document.querySelectorAll('[data-countdown]').forEach(e=>e.textContent=countDown(N(e.dataset.countdown)));updateTimeBanner()},1000);
+function parseCsv(text){const rows=[];let row=[],field='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===','){row.push(field.trim());field=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(field.trim());if(row.some(x=>x!==''))rows.push(row);row=[];field=''}else field+=c}if(quoted)throw Error('CSV 引號未閉合');row.push(field.trim());if(row.some(x=>x!==''))rows.push(row);return rows}
+function parseEvents(csv){const rows=parseCsv(csv.replace(/^\ufeff/,''));if(rows.length<2)throw Error('CSV 沒有有效事件資料');const headers=rows.shift().map(x=>x.toLowerCase().trim());for(const h of ['exchange','symbol','strategy','exposure_sec','received','adverse_pct'])if(!headers.includes(h))throw Error('CSV 缺少欄位 '+h);
+ const idx=h=>headers.indexOf(h);const out=[];for(const [i,row] of rows.entries()){if(row.every(x=>!x))continue;const exchange=(row[idx('exchange')]||'').toLowerCase(),symbol=(row[idx('symbol')]||'').toUpperCase().trim(),strategy=(row[idx('strategy')]||'').toLowerCase(),exposureSec=N(row[idx('exposure_sec')]),rec=(row[idx('received')]||'').toLowerCase(),ad=N(row[idx('adverse_pct')]);
+  if(!['bybit','binance'].includes(exchange)||!/^[A-Z0-9]+USDT$/.test(symbol)||!['new','hedge'].includes(strategy)||!Number.isInteger(exposureSec)||exposureSec<1||exposureSec>600||!['1','0','true','false','yes','no'].includes(rec)||!Number.isFinite(ad)||ad<0||ad>100)throw Error(`CSV 第 ${i+2} 行有無效內容（允許 exchange=bybit/binance、received=0/1、adverse_pct=0～100）`);
+  out.push({exchange,symbol,strategy,exposureSec,received:['1','true','yes'].includes(rec),adverseRate:ad/100});
+ }if(!out.length)throw Error('沒有可用事件');if(out.length>20000)throw Error('單次上限 20,000 筆事件');return out;
 }
-function fireNotifications(x){
-  if(Notification.permission!=="granted")return;
-  const d=(x.nextFunding-Date.now())/1000;
-  const thresholds=[60,15,5];
-  thresholds.forEach(t=>{
-    if(d<=t && d>t-2){
-      const key=`${x.source}:${x.symbol}:${x.nextFunding}:${t}`;
-      if(state.notified.has(key))return;
-      state.notified.add(key);
-      new Notification(`${x.symbol} Funding T-${t}s`,{
-        body:`CP ${x.cp.toFixed(2)}｜Funding ${pct(x.funding)}｜預估淨收益 ${money(x.netUSDT)}`
-      });
-    }
-  });
+function refreshHistory(){const unique=new Set(state.events.map(e=>e.exchange+':'+e.symbol));$('historyCount').textContent=state.events.length+' 筆';$('historySymbols').textContent=unique.size+' 個';if(state.selected){const st=eventStats(state.selected.source,state.selected.symbol,settings());$('historyActive').textContent=state.selected.symbol+'（'+st.count+' 筆）';$('historyES').textContent=st.valid?percent(st.es95):'未達 100 筆'}}
+function recompute(){let s;try{s=settings()}catch(e){renderStatus(e.message,true);return}state.candidates=state.candidates.map(x=>compute(x,s)).sort(sortCandidates);renderAll();refreshHistory()}
+$('eventFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>4*1024*1024)throw Error('CSV 檔案超過 4MB');const ev=parseEvents(await file.text());state.events=[...state.events,...ev];if(state.events.length>30000)state.events=state.events.slice(-30000);writeStore('fundingCpProEventsV3',state.events);$('eventStatus').textContent=`已新增 ${ev.length} 筆，總共 ${state.events.length} 筆。請確認紀錄是同策略、同時間窗，否則統計結果不適用。`;refreshHistory();recompute()}catch(err){$('eventStatus').textContent='匯入失敗：'+err.message}finally{e.target.value=''}});
+$('clearEventsBtn').addEventListener('click',()=>{if(!confirm('確定清除這個瀏覽器中所有匯入的歷史事件嗎？'))return;state.events=[];writeStore('fundingCpProEventsV3',state.events);$('eventStatus').textContent='已清除本機歷史事件';recompute()});
+$('sampleCsvBtn').addEventListener('click',()=>{const text='exchange,symbol,strategy,exposure_sec,received,adverse_pct\nbybit,BTCUSDT,new,6,1,0.12\nbybit,BTCUSDT,new,6,0,0.25\nbinance,ETHUSDT,hedge,6,1,0.06\n';const blob=new Blob(['\ufeff'+text],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='funding_event_template.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+$('candidateSelect').addEventListener('change',e=>chooseSymbol(e.target.value));$('refreshBtn').addEventListener('click',refreshScanner);$('refineOneBtn').addEventListener('click',refineSelected);
+$('notifyBtn').addEventListener('click',async()=>{if(!('Notification'in window))return alert('你的瀏覽器不支援通知');try{const p=await Notification.requestPermission();alert(p==='granted'?'已允許通知（請保持網頁開啟）':'通知尚未獲得授權')}catch(e){alert('通知無法啟用：'+e.message)}});
+$('resetBtn').addEventListener('click',()=>{if(!confirm('恢復預設參數？不會清除持倉和歷史事件'))return;for(const [k,v] of Object.entries(defaults))$(k).value=v;saveSettings();refreshScanner()});
+inputs.forEach(k=>$(k).addEventListener('change',()=>{saveSettings();if(['strategy','takerFee','manualProb','manualAdverse','manualTail','tailFactor','notional','maxSpread'].includes(k)){// 名義價值和價差門檻需要重新抓深度，其他參數先重算
+ if(['notional','maxSpread'].includes(k))refreshScanner();else recompute();
+ }else refreshScanner()}));
+/* 持倉監控：沿用舊版儲存格式，修正斷線／刪列的訂閱管理。 */
+function monitorData(){return [...$('monitorBody').querySelectorAll('tr')].map(tr=>({name:tr.querySelector('.m-name').value,source:tr.querySelector('.m-source').value,side:tr.querySelector('.m-side').value,leverage:tr.querySelector('.m-lev').value,symbol:tr.querySelector('.m-symbol').value.toUpperCase().trim(),buyPrice:tr.querySelector('.m-entry').value}))}
+function saveMonitor(){writeStore('cryptoMonitorDataV2',monitorData())}
+function loadMonitor(){const v=readStore('cryptoMonitorDataV2',null);if(Array.isArray(v)){v.forEach(addMonitorRow);return}const old=readStore('cryptoMonitorData',[]);if(Array.isArray(old))old.forEach(o=>addMonitorRow({...o,source:'binance',side:'long'}))}
+function makeInput(cls,value,type='text'){const i=document.createElement('input');i.className=cls;i.type=type;i.value=String(value??'');if(type==='number')i.step='any';return i}
+function makeSelect(cls,values,value){const s=document.createElement('select');s.className=cls;for(const [v,label] of values){const o=document.createElement('option');o.value=v;o.textContent=label;s.appendChild(o)}s.value=value;return s}
+function addMonitorRow(saved={}){const tr=document.createElement('tr');const cells=Array.from({length:10},()=>tr.appendChild(document.createElement('td')));const defs=[makeInput('m-name',saved.name||''),makeSelect('m-source',[['binance','Binance'],['bybit','Bybit']],saved.source||'binance'),makeSelect('m-side',[['long','LONG'],['short','SHORT']],saved.side||'long'),makeInput('m-lev',saved.leverage||1,'number'),makeInput('m-symbol',saved.symbol||''),makeInput('m-entry',saved.buyPrice||'','number')];defs[4].placeholder='BTCUSDT';defs[3].min='1';defs[5].placeholder='進場價';defs.forEach((el,i)=>cells[i].appendChild(el));cells[6].textContent='--';cells[6].className='m-price';cells[7].textContent='--';cells[7].className='m-pnl';cells[8].textContent='等待行情';cells[8].className='m-status muted';const btn=document.createElement('button');btn.className='btn small danger';btn.textContent='刪除';cells[9].appendChild(btn);$('monitorBody').appendChild(tr);defs.forEach(e=>e.addEventListener('change',()=>{saveMonitor();syncStreams();renderMonitorCached(tr)}));btn.addEventListener('click',()=>{tr.remove();saveMonitor();syncStreams()});syncStreams()}
+function streamKey(tr){const source=tr.querySelector('.m-source').value,symbol=tr.querySelector('.m-symbol').value.trim().toUpperCase();return /^[A-Z0-9]+USDT$/.test(symbol)?source+':'+symbol:null}
+function syncStreams(){const needed=new Set([...$('monitorBody').querySelectorAll('tr')].map(streamKey).filter(Boolean));for(const [key,entry] of state.streams){if(!needed.has(key)){entry.active=false;clearTimeout(entry.retryTimer);try{entry.ws?.close()}catch{}state.streams.delete(key)}}for(const key of needed){if(!state.streams.has(key)){const entry={active:true,ws:null,price:null,ts:0,retryTimer:null,retry:0,status:'連線中'};state.streams.set(key,entry);connectStream(key,entry)}}}
+function connectStream(key,entry){if(!entry.active||state.streams.get(key)!==entry)return;const [source,symbol]=key.split(':');let ws;try{ws=new WebSocket(source==='binance'?`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@markPrice@1s`:'wss://stream.bybit.com/v5/public/linear');entry.ws=ws;entry.status='連線中';ws.onopen=()=>{entry.retry=0;entry.status='已連線';if(source==='bybit')ws.send(JSON.stringify({op:'subscribe',args:[`tickers.${symbol}`]}));updateStreamStatus(key)};ws.onmessage=e=>{try{const j=JSON.parse(e.data);let price=null;if(source==='binance'){if(j.e==='markPriceUpdate'&&j.s===symbol)price=N(j.p)}else if(j.topic===`tickers.${symbol}`&&j.data)price=N(j.data.markPrice||j.data.lastPrice);if(price>0&&Number.isFinite(price)){entry.price=price;entry.ts=Date.now();renderMonitorForKey(key)}}catch(err){console.warn('行情訊息解析異常',err)}};ws.onerror=()=>{entry.status='連線異常';updateStreamStatus(key)};ws.onclose=()=>{if(!entry.active||state.streams.get(key)!==entry)return;entry.status='離線（重連中）';updateStreamStatus(key);const delay=Math.min(30000,2000*Math.pow(1.7,entry.retry++));entry.retryTimer=setTimeout(()=>connectStream(key,entry),delay)}}catch(e){entry.status='無法建立連線';updateStreamStatus(key);entry.retryTimer=setTimeout(()=>connectStream(key,entry),10000)}}
+function updateStreamStatus(key){document.querySelectorAll('#monitorBody tr').forEach(tr=>{if(streamKey(tr)!==key)return;renderMonitorCached(tr)})}
+function renderMonitorForKey(key){document.querySelectorAll('#monitorBody tr').forEach(tr=>{if(streamKey(tr)===key)renderMonitorCached(tr)})}
+function renderMonitorCached(tr){const key=streamKey(tr),entry=key?state.streams.get(key):null,price=entry?.price,hasLive=goodNum(price)&&price>0&&Date.now()-entry.ts<20000;
+ tr.querySelector('.m-status').textContent=!key?'等待交易對':!entry?'未連線':hasLive?'即時':entry.status==='已連線'?'行情逾時（等待更新）':entry.status;
+ tr.querySelector('.m-status').className='m-status '+(hasLive?'good':'warn');tr.querySelector('.m-price').textContent=hasLive?fx(price):'--';
+ const ep=N(tr.querySelector('.m-entry').value),lev=N(tr.querySelector('.m-lev').value),sign=tr.querySelector('.m-side').value==='long'?1:-1;
+ const cell=tr.querySelector('.m-pnl');if(hasLive&&ep>0&&lev>0){const pnl=(price-ep)/ep*sign*lev*100;cell.textContent=(pnl>=0?'+':'')+pnl.toFixed(2)+'%';cell.className='m-pnl '+(pnl>=0?'good':'bad')}else{cell.textContent='--';cell.className='m-pnl'}
 }
-
-setInterval(()=>{
-  document.querySelectorAll("[data-countdown]").forEach(el=>el.textContent=countdownText(el.dataset.countdown));
-  updateTimeBanner();
-},1000);
-
-$("candidateSelect").addEventListener("change",e=>selectSymbol(e.target.value));
-$("refreshBtn").addEventListener("click",refreshScanner);
-$("notifyBtn").addEventListener("click",async()=>{
-  if(!("Notification" in window)) return alert("此瀏覽器不支援通知。");
-  const p=await Notification.requestPermission();
-  alert(p==="granted"?"已啟用提示。":"通知權限未開啟。");
-});
-["source","notional","feePct","safety","exposureSec","minTurnover","refineN","refreshSec"].forEach(id=>{
-  $(id).addEventListener("change",()=>{saveSettings();refreshScanner();});
-});
-
-/* ---- 即時持倉監控 ---- */
-function monitorData(){
-  return [...document.querySelectorAll("#monitorBody tr")].map(tr=>({
-    name:tr.querySelector(".m-name").value,
-    source:tr.querySelector(".m-source").value,
-    side:tr.querySelector(".m-side").value,
-    leverage:tr.querySelector(".m-lev").value,
-    symbol:tr.querySelector(".m-symbol").value.toUpperCase().trim(),
-    buyPrice:tr.querySelector(".m-entry").value
-  }));
-}
-function saveMonitor(){localStorage.setItem("cryptoMonitorDataV2",JSON.stringify(monitorData()));}
-function loadMonitor(){
-  const v2=JSON.parse(localStorage.getItem("cryptoMonitorDataV2")||"null");
-  if(v2){v2.forEach(addMonitorRow);return;}
-  const old=JSON.parse(localStorage.getItem("cryptoMonitorData")||"[]");
-  old.forEach(x=>addMonitorRow({name:x.name,source:"binance",side:"long",leverage:x.leverage,symbol:x.symbol,buyPrice:x.buyPrice}));
-}
-function addMonitorRow(saved={}){
-  const tr=document.createElement("tr");
-  tr.innerHTML=`
-    <td><input class="m-name row-input" value="${saved.name||''}"></td>
-    <td><select class="m-source"><option value="binance">Binance</option><option value="bybit">Bybit</option></select></td>
-    <td><select class="m-side"><option value="long">LONG</option><option value="short">SHORT</option></select></td>
-    <td><input class="m-lev row-input" type="number" min="1" value="${saved.leverage||1}"></td>
-    <td><input class="m-symbol row-input" value="${saved.symbol||''}" placeholder="BTCUSDT"></td>
-    <td><input class="m-entry row-input" type="number" step="any" value="${saved.buyPrice||''}"></td>
-    <td class="m-price">--</td><td class="m-pnl">--</td>
-    <td><button class="m-del">刪除</button></td>`;
-  $("monitorBody").appendChild(tr);
-  tr.querySelector(".m-source").value=saved.source||"binance";
-  tr.querySelector(".m-side").value=saved.side||"long";
-  tr.querySelectorAll("input,select").forEach(el=>el.addEventListener("change",()=>{saveMonitor();connectMonitorRow(tr);}));
-  tr.querySelector(".m-del").onclick=()=>{tr.remove();saveMonitor();};
-  connectMonitorRow(tr);
-}
-function connectMonitorRow(tr){
-  const source=tr.querySelector(".m-source").value;
-  const symbol=tr.querySelector(".m-symbol").value.toUpperCase().trim();
-  if(!symbol)return;
-  const key=`${source}:${symbol}`;
-  if(state.ws[key] && [WebSocket.OPEN,WebSocket.CONNECTING].includes(state.ws[key].readyState))return;
-  try{
-    let ws;
-    if(source==="binance"){
-      ws=new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@markPrice@1s`);
-      ws.onmessage=e=>{
-        const d=JSON.parse(e.data); updateMonitorPrice(source,symbol,n(d.p||d.c));
-      };
-    }else{
-      ws=new WebSocket("wss://stream.bybit.com/v5/public/linear");
-      ws.onopen=()=>ws.send(JSON.stringify({op:"subscribe",args:[`tickers.${symbol}`]}));
-      ws.onmessage=e=>{
-        const d=JSON.parse(e.data);
-        if(d.topic===`tickers.${symbol}` && d.data) updateMonitorPrice(source,symbol,n(d.data.markPrice||d.data.lastPrice));
-      };
-    }
-    state.ws[key]=ws;
-  }catch(e){console.error(e);}
-}
-function updateMonitorPrice(source,symbol,price){
-  document.querySelectorAll("#monitorBody tr").forEach(tr=>{
-    if(tr.querySelector(".m-source").value!==source)return;
-    if(tr.querySelector(".m-symbol").value.toUpperCase().trim()!==symbol)return;
-    const entry=n(tr.querySelector(".m-entry").value), lev=n(tr.querySelector(".m-lev").value)||1;
-    const side=tr.querySelector(".m-side").value;
-    tr.querySelector(".m-price").textContent=fmtPrice(price);
-    if(entry>0){
-      const raw=(price-entry)/entry*(side==="long"?1:-1);
-      const pnl=raw*lev*100;
-      const cell=tr.querySelector(".m-pnl");
-      cell.textContent=(pnl>=0?"+":"")+pnl.toFixed(2)+"%";
-      cell.className="m-pnl "+(pnl>=0?"good":"bad");
-    }
-  });
-}
-$("addBlankBtn").onclick=()=>{addMonitorRow();saveMonitor();};
-$("addMonitorBtn").onclick=()=>{
-  const x=state.selected;if(!x)return;
-  addMonitorRow({
-    name:`CP ${x.cp.toFixed(2)}`,source:x.source,side:x.funding<0?"long":"short",
-    leverage:1,symbol:x.symbol,buyPrice:x.mark
-  });
-  saveMonitor();
-  document.querySelector("#monitorBody tr:last-child")?.scrollIntoView({behavior:"smooth",block:"center"});
-};
-
-loadSettings();
-loadMonitor();
-refreshScanner();
+setInterval(()=>{document.querySelectorAll('#monitorBody tr').forEach(renderMonitorCached)},5000);
+setInterval(()=>{if(state.loading||!state.candidates.length)return;const stale=state.candidates.some(x=>x.depth&&Date.now()-x.depth.receivedAt>90000);if(stale){state.candidates=state.candidates.map(x=>compute(x,settings())).sort(sortCandidates);renderAll()}},5000);
+$('addBlankBtn').addEventListener('click',()=>{addMonitorRow();saveMonitor()});
+$('addMonitorBtn').addEventListener('click',()=>{const x=state.selected;if(!x)return alert('請先選擇交易對');addMonitorRow({name:'Funding 候選',source:x.source,side:x.funding<0?'long':'short',leverage:1,symbol:x.symbol,buyPrice:x.mark});saveMonitor();$('monitorBody').lastElementChild?.scrollIntoView({behavior:'smooth',block:'center'})});
+loadSettings();state.events=readStore('fundingCpProEventsV3',[]);if(!Array.isArray(state.events))state.events=[];state.events=state.events.filter(x=>['bybit','binance'].includes(x.exchange)&&/^[A-Z0-9]+USDT$/.test(x.symbol)&&['new','hedge'].includes(x.strategy)&&Number.isInteger(x.exposureSec)&&typeof x.received==='boolean'&&Number.isFinite(x.adverseRate)&&x.adverseRate>=0);refreshHistory();loadMonitor();refreshScanner();
 </script>
 </body>
 </html>
